@@ -1,4 +1,4 @@
-const CACHE = 'railboard-shell-v1';
+const CACHE = 'railboard-shell-v9';
 const ASSETS = ['./', './index.html', './styles.css', './src/app.js', './src/api.js', './src/storage.js', './manifest.webmanifest', './icons/icon.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS))));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('railboard-shell-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));

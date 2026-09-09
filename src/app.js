@@ -9,15 +9,23 @@ let request = 0;
 let loading = false;
 const scenario = new URLSearchParams(location.search).get('demo') || 'normal';
 const time = value => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(value));
+function updateClock() {
+  const now = new Date();
+  $('today').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' }).format(now);
+  $('station-clock').textContent = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(now);
+  $('station-clock').dateTime = now.toISOString();
+}
+setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
 function applySettings() {
   document.body.dataset.theme = settings.theme;
   document.querySelector('meta[name="theme-color"]').content = { retro: '#121512', modern: '#f3f4ef', midnight: '#0c131d' }[settings.theme];
   $('station-name').textContent = settings.stationName;
   $('station-code').textContent = settings.crs;
-  $('today').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'Europe/London' }).format(new Date());
+  updateClock();
   $('refresh-status').textContent = settings.autoRefresh ? 'Refreshes every 30s' : 'Manual refresh';
   for (const type of ['departures', 'arrivals']) $(type).setAttribute('aria-pressed', String(type === boardType));
-  $('destination-label').textContent = `${boardType === 'arrivals' ? 'ORIGIN' : 'DESTINATION'} / STATUS`;
+  $('destination-label').textContent = `${boardType === 'arrivals' ? 'Origin' : 'Destination'} / Status`;
 }
 function renderBoard(stale = false) {
   $('services').innerHTML = board.services.length ? board.services.map((service, index) => {
@@ -59,11 +67,11 @@ function stationOptions(query = '', selected = settings.crs) {
 }
 function openPreferences() {
   const first = !settings.onboarded;
-  $('preferences-title').textContent = first ? 'Welcome to Railboard' : 'Your Railboard';
+  $('preferences-title').textContent = first ? 'Welcome to Railboard' : 'Settings';
   $('advanced-settings').hidden = first;
   $('close-preferences').hidden = first;
   $('welcome-copy').hidden = !first;
-  $('save-preferences').textContent = first ? 'Start your board →' : 'Save settings';
+  $('save-preferences').textContent = first ? 'Show board' : 'Save settings';
   $('station-search').value = '';
   stationOptions();
   document.querySelector(`input[name="theme"][value="${settings.theme}"]`).checked = true;

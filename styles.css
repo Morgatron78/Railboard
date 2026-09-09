@@ -6,3 +6,120 @@ dialog{width:min(540px,calc(100% - 24px));max-height:calc(100dvh - 32px);padding
 @media(max-width:520px){.shell{padding-left:max(16px,env(safe-area-inset-left));padding-right:max(16px,env(safe-area-inset-right))}.masthead{padding-bottom:18px}.station-heading{padding:32px 0 26px;align-items:start}.demo-badge{font-size:8px;padding:7px 8px;margin-top:1px}.eyebrow{font-size:8px;letter-spacing:1.4px}.board-head,.service{grid-template-columns:63px minmax(0,1fr) 33px;gap:10px;padding-left:14px;padding-right:14px}.time{font-size:21px}.destination{font-size:17px}.service{padding-top:20px;padding-bottom:20px}.service-info{font-size:11px;gap:6px}.platform{font-size:16px;min-height:31px}.board-head{font-size:8px;letter-spacing:.7px}.board-footer{font-size:10px}.note{margin-bottom:32px}.page-footer{font-size:9px}dialog{padding:22px}.tabs button{padding:0 12px}#refresh span{display:none}.station-meta{font-size:11px}.station-heading{gap:8px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
+/* Plain, mixed-case transport-signage headings. */
+.board-head {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.3;
+  color: var(--text);
+}
+@media (max-width: 520px) {
+  .board-head { font-size: 13px; }
+}
+/* Functional controls and signage; retain the original board layout. */
+.board, .quiet, .tabs, .tabs button, .platform, .note, dialog,
+.theme-preview, .primary, input[type=search], input:not([type]), select {
+  border-radius: 0;
+}
+.brand { font-size: 20px; letter-spacing: 0; }
+.brand img { width: 28px; height: 28px; }
+.version { border: 0; font-size: 12px; }
+.masthead { padding-bottom: 16px; }
+.station-heading { padding-top: 28px; padding-bottom: 24px; }
+.demo-badge { border: 0; padding: 0; font-size: 12px; letter-spacing: 0; }
+.tabs { background: none; border: 0; padding: 0; gap: 20px; }
+.tabs button { padding: 0 2px; min-height: 44px; font-size: 15px; }
+.tabs button[aria-pressed=true] {
+  background: none; box-shadow: none; border-bottom: 3px solid var(--text); font-weight: 700;
+}
+.quiet { font-size: 14px; }
+.platform { border: 0; }
+.platform.changed { border: 1px solid var(--accent); }
+.eyebrow { font-size: 12px; letter-spacing: 0; }
+.note { border: 0; padding: 0; margin: 16px 0 28px; }
+.note p { font-size: 12px; }
+.page-footer { font-size: 12px; padding-top: 14px; }
+.page-footer>:last-child { letter-spacing: 0; }
+dialog::backdrop { backdrop-filter: none; }
+@media(max-width:520px) {
+  .station-heading { padding-top: 24px; }
+  .demo-badge { font-size: 11px; padding-top: 4px; }
+  .tabs { gap: 16px; }
+}
+/* Station-sign lettering and a continuously updated UK clock. */
+.station-heading { align-items: flex-start; }
+.station-heading>div { flex: 1; min-width: 0; }
+.station-meta {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px 16px;
+  align-items: baseline;
+  color: var(--text);
+  font: 600 21px/1.35 Arial, Helvetica, sans-serif;
+}
+#station-code { font-size: 18px; letter-spacing: 0; }
+#station-clock {
+  grid-column: 1 / -1;
+  display: block;
+  font-size: 42px;
+  font-weight: 700;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
+}
+.board-head { font-size: 19px; }
+.tabs button { font-size: 20px; }
+.quiet, .demo-badge { font-size: 17px; }
+.board-footer, .note p, .page-footer { font-size: 16px; line-height: 1.5; }
+.service-info { font-size: 16px; }
+label, legend, .hint, .eyebrow, #welcome-copy { font-size: 16px; }
+.board-head,.service { grid-template-columns: 82px minmax(0,1fr) 52px; }
+@media(max-width:520px) {
+  .station-heading { flex-wrap: wrap; gap: 14px; }
+  .station-heading>div { flex-basis: 100%; }
+  .station-meta { font-size: 19px; gap: 8px 12px; }
+  #station-clock { font-size: 38px; }
+  #station-code { font-size: 17px; }
+  .board-head,.service { grid-template-columns: 61px minmax(0,1fr) 39px; gap: 8px; padding-left: 12px; padding-right: 12px; }
+  .board-head { font-size: 16px; }
+  .tabs button { font-size: 18px; }
+  .demo-badge { font-size: 16px; padding: 0; }
+  .service-info { font-size: 14px; }
+  .board-footer { flex-wrap: wrap; gap: 4px 16px; font-size: 15px; }
+  .note p,.page-footer { font-size: 15px; }
+}
+/* Larger LED lettering, with scheduled time as the strongest row element. */
+body[data-theme=retro] .board-head,
+body[data-theme=retro] .service {
+  grid-template-columns: 120px minmax(0,1fr) 52px;
+}
+body[data-theme=retro] .time {
+  font-size: 36px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+body[data-theme=retro] .destination {
+  font-size: 26px;
+  line-height: 1.3;
+}
+@media(max-width:520px) {
+  body[data-theme=retro] .board-head,
+  body[data-theme=retro] .service {
+    grid-template-columns: 94px minmax(0,1fr) 39px;
+  }
+  body[data-theme=retro] .time { font-size: 30px; }
+  body[data-theme=retro] .destination { font-size: 23px; }
+}
+@media(max-width:360px) {
+  body[data-theme=retro] .board-head,
+  body[data-theme=retro] .service {
+    grid-template-columns: 88px minmax(0,1fr) 35px;
+    gap: 7px;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  body[data-theme=retro] .time { font-size: 28px; }
+  body[data-theme=retro] .destination { font-size: 21px; }
+}
