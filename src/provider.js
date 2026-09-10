@@ -47,6 +47,18 @@ export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
     return result;
   }
   return { mock:false, getDepartures: o => board('departures',o), getArrivals: o => board('arrivals',o),
+    async getServiceDetails({crs, service}) {
+      if(!/^[A-Z]{3}$/.test(crs) || !clockValue(service.scheduled) || !/^\d{4}-\d{2}-\d{2}$/.test(service.serviceDate)) throw new Error('Invalid service lookup');
+      const date = new Date(`${service.serviceDate}T12:00:00Z`);
+      date.setUTCDate(date.getUTCDate() + (service.day || 0));
+      const query = new URLSearchParams({crs, dep:service.scheduled.replace(':',''), date:date.toISOString().slice(0,10)});
+      const raw = await get(`/services/lookup?${query}`);
+      if(!Array.isArray(raw?.calls) || !raw.calls.some(p => p.crs === crs)) throw new Error('Service route unavailable');
+      return raw.calls.map(p => {
+        if(!clean(p.name) || !clockValue(p.scheduled)) throw new Error('Invalid calling point');
+        return {name:p.name, scheduled:clockValue(p.scheduled), expected:clockValue(p.expected), status:clean(p.status), passed:p.passed === true, here:p.here === true};
+      });
+    },
     async searchStations(query) {
       if (!query.trim()) return [];
       const result = await get(`/stations?q=${encodeURIComponent(query.trim())}`);

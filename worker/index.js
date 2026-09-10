@@ -13,7 +13,13 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
   if(url.pathname==='/health') return respond({status:'ok'});
   const upstream = new URL(UPSTREAM);
   const board = /^\/boards\/([A-Z]{3})\/(departures|arrivals)$/.test(url.pathname);
-  if(board) {
+  const detail = url.pathname === '/services/lookup';
+  if(detail) {
+    const { crs, dep, date } = Object.fromEntries(url.searchParams);
+    if(!/^[A-Z]{3}$/.test(crs || '') || !/^([01]\d|2[0-3])[0-5]\d$/.test(dep || '') || !/^\d{4}-\d{2}-\d{2}$/.test(date || '') || [...url.searchParams.keys()].some(k=>!['crs','dep','date'].includes(k))) return respond({error:'Invalid service query'},400);
+    upstream.pathname=url.pathname;
+    for(const [key,value] of Object.entries({crs,dep,date})) upstream.searchParams.set(key,value);
+  } else if(board) {
     const limit=url.searchParams.get('limit') || '6';
     if(!['4','6','8','10'].includes(limit) || [...url.searchParams.keys()].some(k=>k!=='limit')) return respond({error:'Invalid parameters'},400);
     upstream.pathname=url.pathname;upstream.searchParams.set('limit',limit);
@@ -35,8 +41,8 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
     }
     if(!result.ok) { console.warn('Upstream HTTP status',result.status); return respond({error:'Rail information temporarily unavailable'},502); }
     const data=await result.json();
-    if(board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
-    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${board?20:300}`}})).catch(()=>{}));
+    if(detail ? !Array.isArray(data?.calls) : board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
+    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${board || detail?20:300}`}})).catch(()=>{}));
     return respond(data);
   } catch (error) { console.warn('Proxy request failed',error.name,error.message); return respond({error:'Rail information temporarily unavailable'},502); }
 }

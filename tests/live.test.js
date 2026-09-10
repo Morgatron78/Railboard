@@ -25,3 +25,15 @@ test('persists stations beyond the mock list and renders genuine LED cells',()=>
  assert.equal(validateSettings({crs:'RDG',stationName:'Reading'}).crs,'RDG');
  const output=led('17:19');assert.ok(output.includes('<circle'));assert.ok(output.includes('unlit'));assert.ok(!led('<script>').includes('<script>'));
 });
+
+test('service lookup uses the service date and validates and normalises calling points',async()=>{
+ let url;
+ const provider=createLiveProvider('https://example.test',async u=>{url=new URL(u);return Response.json({calls:[{crs:'BMV',name:'Bromsgrove',scheduled:'2358',expected:'00:03',here:true,passed:false,status:'late'}]})});
+ const service=normalizeBoard(raw,'departures',6).services[0];
+ const points=await provider.getServiceDetails({crs:'BMV',service});
+ assert.equal(url.pathname,'/services/lookup');assert.equal(url.searchParams.get('date'),'2026-09-11');assert.equal(url.searchParams.get('dep'),'2358');assert.equal(points[0].scheduled,'23:58');assert.equal(points[0].expected,'00:03');assert.equal(points[0].here,true);
+ const bad=createLiveProvider('https://example.test',async()=>Response.json({calls:[{crs:'RDG',name:'Reading',scheduled:'1200'}]}));
+ await assert.rejects(bad.getServiceDetails({crs:'BMV',service}),/route unavailable/);
+ const unavailable=createLiveProvider('https://example.test',async()=>new Response('',{status:502}));
+ await assert.rejects(unavailable.getServiceDetails({crs:'BMV',service}),/502/);
+});

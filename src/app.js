@@ -141,8 +141,18 @@ $('services').addEventListener('click', async event => {
   const fields = { From: service.origin, To: service.destination, Scheduled: service.scheduled, Expected: service.status === 'cancelled' ? 'Cancelled' : service.expected || 'Unconfirmed', Platform: service.transport === 'bus' ? 'Replacement bus' : `${service.platform || 'Unassigned'}${service.platformChanged ? ' (changed)' : ''}`, Operator: service.operator };
   const groups = service.callingGroups?.length ? service.callingGroups : [{ points: service.callingPoints }];
   const timeline = groups.map(group => `${groups.length > 1 ? `<h4>${escape(group.label)}</h4>` : ''}<ol class="timeline">${group.points.map(point => `<li><span>${escape(point.scheduled)}</span><span>${escape(point.name)}${point.status === 'cancelled' || service.status === 'cancelled' ? '<small>Cancelled</small>' : point.actual ? `<small>Actual ${escape(point.actual)}</small>` : point.expected && point.expected !== point.scheduled ? `<small>Expected ${escape(point.expected)}</small>` : ''}</span></li>`).join('')}</ol>`).join('');
-  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<p>Calling points are not supplied by this live board. No estimated route is shown.</p>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Board received ${time(board.generatedAt)}`}</p>`;
+  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<div id="live-calling-points" role="status">Loading calling points…</div>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Board received ${time(board.generatedAt)}`}</p>`;
   $('journey').showModal();
+  const target = $('live-calling-points');
+  if(target && !api.mock) {
+    try {
+      const points = await api.getServiceDetails({crs:board.station.crs, service});
+      if(!target.isConnected || !$('journey').open) return;
+      target.innerHTML = points.length ? `<ol class="timeline">${points.map(p => `<li class="${p.here ? 'current-call' : p.passed ? 'passed-call' : ''}"><span>${escape(p.scheduled)}</span><span>${escape(p.name)}${p.here ? '<small>Selected station</small>' : ''}${p.status === 'cancelled' ? '<small>Cancelled</small>' : p.expected && p.expected !== p.scheduled ? `<small>Expected ${escape(p.expected)}</small>` : ''}${p.passed ? '<small>Passed</small>' : ''}</span></li>`).join('')}</ol>` : 'No calling points available for this service.';
+    } catch {
+      if(target.isConnected) target.textContent = 'Calling points temporarily unavailable. Close and reopen this service to try again.';
+    }
+  }
 });
 setInterval(() => { if (settings.autoRefresh && !document.hidden && !loading) refresh(); }, 30000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && settings.autoRefresh && (!board || Date.now() - Date.parse(board.generatedAt) >= 30000)) refresh(); });

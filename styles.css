@@ -267,3 +267,21 @@ body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body
  .brand .wordmark,body[data-theme=retro] .brand .wordmark{width:140px;height:36px}
  .strapline{font-size:12px}
 }
+
+/* Compact secondary information and flat, comfortably tappable controls. */
+#refresh{display:flex;align-items:center;justify-content:center;gap:8px;font-size:30px;line-height:1;min-width:44px;padding:6px 10px}
+#refresh span{font-size:16px}
+#display-title{text-transform:uppercase}
+.page-footer,body[data-theme=retro] .page-footer{font-size:12px;line-height:1.3;padding:8px 14px}
+.board-footer,body[data-theme=retro] .board-footer{font-size:14px;line-height:1.35;padding-top:10px;padding-bottom:6px}
+.note,body[data-theme=retro] .note{padding-top:6px;padding-bottom:10px}
+.note p,body[data-theme=retro] .note p,.demo-badge,body[data-theme=retro] .demo-badge{font-size:13px;line-height:1.4}
+.dialog-heading{align-items:center;padding-bottom:10px;gap:12px}
+.dialog-heading h2,.dialog-heading .eyebrow{margin:0}
+.dialog-heading>div{min-width:0;flex:1}
+.dialog-heading .quiet{appearance:none;-webkit-appearance:none;flex:0 0 44px;width:44px;height:44px;min-height:44px;padding:0;border:0;box-shadow:none;background:transparent;font-size:20px;line-height:1;display:grid;place-items:center;align-self:center}
+.theme-preview{border:2px solid #b9c4cc;border-radius:0;box-shadow:none;background-image:none}
+.theme-preview:has(:checked){border:2px solid var(--br-red)}
+.timeline .current-call{font-weight:700}
+.timeline .current-call:after{background:var(--accent)}
+.timeline .passed-call{color:var(--muted)}

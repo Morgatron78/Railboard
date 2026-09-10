@@ -25,3 +25,11 @@ test('rate limits stay visible to browser and malformed upstream data fails',asy
   assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'120');assert.equal(limited.headers.get('Access-Control-Expose-Headers'),'Retry-After');
   const broken=await handleRequest(req(),env,{}, {fetch:async()=>Response.json({error:'bad'})});assert.equal(broken.status,502);
 });
+
+test('service proxy allows only validated lookups and rejects malformed routes',async()=>{
+ const path='/services/lookup?crs=BMV&dep=1742&date=2026-09-10';
+ const result=await handleRequest(req(path),env,{}, {fetch:async url=>{assert.equal(url.pathname,'/services/lookup');assert.equal(url.searchParams.get('dep'),'1742');return Response.json({calls:[]})}});
+ assert.equal(result.status,200);assert.equal(result.headers.get('Access-Control-Allow-Origin'),origin);
+ for(const bad of [path+'&url=x',path.replace('1742','2960'),path.replace('BMV','../')]) assert.equal((await handleRequest(req(bad),env,{}, {fetch:()=>assert.fail('invalid query reached upstream')})).status,400);
+ assert.equal((await handleRequest(req(path),env,{}, {fetch:async()=>Response.json({})})).status,502);
+});
