@@ -1,66 +1,103 @@
 # Railboard
 
-A small, iPhone-first UK railway PWA. The current iteration uses the public railinfo.uk API directly; no account, API key, Worker or backend is required.
+**Your station. Live.**
 
-## Source of truth
+Railboard 1.0 is a lightweight, mobile-first UK railway departure and arrival board, designed for iPhone and installable as a progressive web app.
 
-- `RAILBOARD-DESIGN-SPEC.md` defines UI and theme direction.
-- `RAILBOARD-API-SPEC.md` supersedes the original LDBWS/Cloudflare architecture.
-- `Railboard — Codex Project Brief.md` supplies the broader product context.
+[Open Railboard](https://railboard.morgantech.co.uk)
 
-## Run
+## Features
 
-Requires Node.js 22 or later. No dependencies or build step.
+- Live departures and arrivals, including expected times, delays, cancellations and platforms.
+- Three railway-inspired themes: Retro LED, Modern Rail and Midnight.
+- Original SVG dot-matrix lettering on the Retro board.
+- Searchable home station and optional favourite destination.
+- Service details with calling points, available predictions and passed-stop indicators.
+- Configurable default board, service count, automatic refresh and saved-board caching.
+- Automatic refresh every 30 seconds while visible, with stale-data refresh when returning to the app.
+- Offline application shell and clearly labelled saved boards when live information is unavailable.
+- Preferences stored on your device; no Railboard account or analytics.
+
+## Install on iPhone
+
+Open Railboard in Safari, choose **Share → Add to Home Screen**, and launch it from the new icon. Settings includes the app version and data attribution.
+
+After a deployment, open the app to let it download the update, then close all Railboard windows and reopen it to activate the updated shell.
+
+## Run locally
+
+Requires Node.js 22 or later. The frontend has no package dependencies or build step.
 
 ```sh
 npm start
 npm test
 ```
 
-Open http://localhost:4173/Railboard/. Add `?demo=normal` for mock data, `?demo=empty` for the empty state, or `?demo=error` for failure testing. Live mode never substitutes mock services.
+Open [the local app](http://localhost:4173/Railboard/). Use this hostname and port for live requests: it is included in the deployed proxy's origin allowlist.
 
-## This iteration
+Demo mode uses the same interface with local fixtures:
 
-- Live departures and arrivals with centrally normalized times, statuses, platforms and operator information.
-- Debounced remote station search; station name and CRS saved locally.
-- 30-second foreground refresh, in-flight request deduplication, timeout and Retry-After cooldown.
-- Per-station/per-board saved data, explicitly labelled cached until refreshed.
-- Retro corporate header, blue station strip, original 5×7 SVG LED cells and printed-timetable detail treatment.
-- Existing Modern and Midnight layouts retained for subsequent design passes.
-- Offline app shell with separate application-managed board snapshots.
+- `?demo=normal` — sample services and disruption states.
+- `?demo=empty` — no services.
+- `?demo=error` — unavailable information.
 
-## Provider observations
+Live mode never substitutes demo services. Demo information must not be used for travel.
 
-Verified against public responses on 10 September 2026 and https://railinfo.uk/developers:
+## Live data and architecture
 
-Both board endpoints currently return a `departures` array; arrival responses use `kind: arrivals`, `public_dep` for the board time and `destination` for the arriving service's origin. These provider conventions are isolated in `src/provider.js`.
+The static frontend runs on GitHub Pages. A small Cloudflare Worker forwards requests to the public [railinfo API](https://railinfo.uk/developers), which uses Network Rail and National Rail feeds. The Worker is necessary because the upstream API does not allow direct browser access through CORS.
 
-The response has no generation timestamp: the app records receipt time. It returns a stop count but no exact calling-point list. Live detail therefore shows available metadata and an explicit unavailable message, never a fabricated timeline. Future journey integration must not imply an unrelated journey plan is the selected train.
+```text
+Railboard PWA → Cloudflare Worker → api.railinfo.uk
+```
 
-## Structure
+No rail-data API key is embedded in the app or required by the current provider. Cloudflare deployment requires your own account.
 
-- `src/api.js`: mock fixtures and shared status text.
-- `src/provider.js`: public API adapter, validation, deduplication and cooldown.
-- `src/config.js`: public API base URL only.
-- `src/storage.js`: preferences and cache matching.
-- `src/app.js`: shared board/UI lifecycle.
-- `src/led.js`: original glyph definitions and cached SVG renderer.
-- `sw.js`: versioned shell cache only; bump its version when shipping assets.
+The Worker permits only validated station searches, departure/arrival boards and service lookups. It uses a fixed upstream, does not follow redirects, allows configured browser origins, caches boards and service details for 20 seconds, and station searches for five minutes. Rate-limit responses retain `Retry-After`.
 
-## Deploy
+The provider adapter normalises upstream fields before the UI consumes them. Board update times indicate receipt time. Calling points are requested on demand from `/services/lookup` using the station, scheduled time and service date; failures show an unavailable message rather than an invented route. Predictions and other fields are shown only when supplied.
 
-GitHub Pages: deploy `main`, `/ (root)`. Relative asset paths support the project site and the custom domain in `CNAME`. Close existing PWA tabs and reopen after an update to activate the new shell.
+The service worker caches the application shell. Board snapshots are managed separately by the application and labelled as cached when a live refresh has not succeeded. Requests are deduplicated, timed out and subject to a cooldown after rate limiting.
 
-## Validation and remaining work
+## Project structure
 
-`npm test` covers API field mapping, disruptions, arrivals, missing data, request deduplication, rate limiting, station persistence, LED cells and offline shell assets. Live API reads were verified; a physical iPhone pass remains necessary.
+| File | Purpose |
+| --- | --- |
+| `index.html`, `styles.css` | Shared interface, branding and theme presentation |
+| `src/app.js` | Board lifecycle, settings UI and service details |
+| `src/provider.js` | Live API adapter, validation and request handling |
+| `src/api.js` | Demo fixtures and shared status wording |
+| `src/storage.js` | Local preferences and board-cache matching |
+| `src/led.js` | Dot-matrix glyphs and SVG renderer |
+| `src/config.js` | Public Worker URL |
+| `worker/index.js` | Cloudflare proxy |
+| `worker/wrangler.toml` | Worker deployment and allowed browser origins |
+| `sw.js`, `manifest.webmanifest` | Offline shell and PWA configuration |
+| `tests/` | API, storage, proxy, LED and offline-shell checks |
 
-Next: compare Retro visually with the design specification, refine Modern then Midnight, and evaluate truthful detail enhancements as provider data permits. The supplied `App Icon` asset has not been modified.
+## Deployment
 
-### Current browser-access blocker
+### Frontend
 
-On 10 September 2026, both station search and board responses returned HTTP 200 but omitted `Access-Control-Allow-Origin`, including when requested with `Origin: https://railboard.morgantech.co.uk`. Server-side adapter verification passes, but direct cross-origin browser fetches are blocked until the provider enables CORS. Live mode therefore shows the unavailable state; use `?demo=normal` to preview design. No proxy or secret infrastructure has been introduced. Do not describe this iteration as a working deployed live-data release.
+Configure GitHub Pages to publish `main` from the repository root. `CNAME` sets the custom domain. Relative asset paths also support hosting below `/Railboard/`.
 
-### Cloudflare deployment — 10 September 2026
+When shipping application changes, increment the cache identifier in `sw.js` so installed apps download a new shell. Keep the package version and Settings → About version aligned for releases.
 
-The user approved a Cloudflare proxy because direct provider CORS is unavailable. The proxy is deployed at https://railboard-proxy.morgan-cope.workers.dev and `src/config.js` now uses it. Departures, arrivals and station search returned HTTP 200 with the site's CORS origin. Earlier direct-access blocker notes above describe the superseded setup. No credentials are used for rail data. See `worker/README.md` for deployment details.
+### Cloudflare proxy
+
+From the repository root:
+
+```sh
+npx wrangler login
+npx wrangler deploy --config worker/wrangler.toml
+```
+
+For your own deployment, update `ALLOWED_ORIGINS` in `worker/wrangler.toml` and `API_BASE_URL` in `src/config.js`. Use the Worker HTTPS origin without a trailing slash. Deploy and verify the Worker before publishing a frontend that depends on new proxy routes.
+
+CORS is not authentication: the proxy is public. Monitor usage and respect upstream fair-use limits.
+
+## Verification
+
+Run `npm test` before publishing. The suite covers provider mapping, arrivals, disruption states, station persistence, request deduplication, rate limiting, calling-point lookup, proxy validation, LED symbols and offline-shell assets.
+
+Also check the installed iPhone app after visual changes, especially safe-area rendering, station suggestions, theme switching, service details and recovery after going offline.
