@@ -216,3 +216,54 @@ body[data-theme=retro] .page-footer {
   body[data-theme=retro] .board-footer, body[data-theme=retro] .note,
   body[data-theme=retro] .page-footer, #board-messages { padding-left: 14px; padding-right: 14px; }
 }
+
+/* Shared British railway identity, including setup and service information. */
+:root{--br-red:#d71920;--rail-ink:#121820}
+body[data-theme=modern]{color-scheme:light;--bg:var(--br-off-white);--surface:#e6e9eb;--text:var(--rail-ink);--muted:#4b5863;--line:#bac6d0;--accent:var(--br-blue);--board:var(--br-off-white);--good:#16833b;--bad:#c9232c;--soft:#e1e7ed}
+body[data-theme=midnight]{--bg:#090d11;--surface:#121820;--text:#f4f6f8;--muted:#aab4be;--line:#26303a;--accent:#91bdea;--board:#090d11;--soft:#162536}
+.shell{padding-top:0}
+.masthead,body[data-theme=retro] .masthead{background:var(--br-off-white);color:var(--br-blue);border-bottom:5px solid var(--br-red);padding-top:calc(env(safe-area-inset-top) + 24px);padding-bottom:16px;isolation:auto}
+.brand .wordmark,body[data-theme=retro] .brand .wordmark{width:216px;height:55px;object-fit:contain;mix-blend-mode:multiply}
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--br-off-white);pointer-events:none;z-index:2}
+body:not([data-theme=retro]) .station-heading{background:var(--br-blue);color:white;padding:20px;align-items:center;flex-wrap:nowrap}
+body:not([data-theme=retro]) .station-meta,body:not([data-theme=retro]) #station-code{color:white;font-size:16px}
+body:not([data-theme=retro]) h1{font-size:30px;margin-bottom:8px}
+body:not([data-theme=retro]) #settings-button{color:white;border:1px solid #88a7c4;padding:8px 10px}
+body:not([data-theme=retro]) .board{border:0}
+body:not([data-theme=retro]) .board-head{background:var(--br-blue);color:white}
+body:not([data-theme=retro]) .platform{background:var(--br-blue);color:white;border-radius:0;width:38px;justify-self:center;font-weight:700}
+body:not([data-theme=retro]) .tabs button[aria-pressed=true]{border-color:var(--br-red)}
+body[data-theme=modern] .status.delayed,body[data-theme=modern] .status.unknown{color:#925000}
+body[data-theme=midnight] .status.delayed,body[data-theme=midnight] .status.unknown{color:#ffc15a}
+dialog,body[data-theme=retro] #journey{color-scheme:light;--bg:var(--br-off-white);--surface:#fffdf7;--text:var(--rail-ink);--muted:#4b5863;--line:#b9c4cc;--accent:var(--br-blue);background:var(--bg);color:var(--text);border:1px solid var(--br-blue);border-top:6px solid var(--br-red);font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;padding:24px}
+.dialog-heading{border-bottom:3px solid var(--br-blue);margin-bottom:18px;align-items:center}
+dialog h2,dialog h3,dialog legend,dialog label{color:var(--br-blue)}
+dialog h2{font-size:30px;letter-spacing:0}
+dialog label,dialog legend{font-size:16px;font-weight:600}
+dialog .quiet{color:var(--br-blue);min-width:44px;min-height:44px}
+dialog .primary{background:var(--br-blue);color:white;border-bottom:4px solid var(--br-red);font-size:18px;min-height:48px}
+dialog .hint,dialog .reason,.detail-meta dt,.timeline small{font-size:14px}
+.detail-meta dd,.timeline li{font-size:17px;font-variant-numeric:tabular-nums}
+.theme-preview{border:2px solid #b9c4cc;border-top:4px solid var(--br-blue)}
+.theme-preview:has(:checked){border-color:var(--br-red)}
+.theme-preview input,.toggle input{accent-color:var(--br-blue)}
+.retro-preview{background:var(--retro-black,#10100e);color:var(--led-amber)}
+.modern-preview{background:var(--br-off-white);color:var(--br-blue)}
+.midnight-preview{background:#090d11;color:#f4f6f8}
+.theme-preview .sample{border-bottom:1px solid currentColor;padding-bottom:10px}
+body[data-theme=midnight] #journey{color-scheme:dark;--bg:#090d11;--surface:#121820;--text:#f4f6f8;--muted:#aab4be;--line:#26303a;--accent:#91bdea}
+body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body[data-theme=midnight] #journey .quiet{color:#f4f6f8}
+:focus-visible{outline:3px solid var(--br-red);outline-offset:3px}
+@media(max-width:520px){
+ .brand .wordmark,body[data-theme=retro] .brand .wordmark{width:164px;height:42px}
+ .strapline{flex-shrink:1;min-width:0}
+ body:not([data-theme=retro]) .station-heading{padding:18px 14px;gap:12px}
+ body:not([data-theme=retro]) .station-heading>div{flex-basis:auto}
+ body:not([data-theme=retro]) h1{font-size:27px}
+ body:not([data-theme=retro]) .station-meta{display:flex;flex-wrap:wrap;font-size:13px}
+ dialog{padding:20px;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px)}
+}
+@media(max-width:380px){
+ .brand .wordmark,body[data-theme=retro] .brand .wordmark{width:140px;height:36px}
+ .strapline{font-size:12px}
+}

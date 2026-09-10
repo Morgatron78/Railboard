@@ -26,7 +26,7 @@ function applySettings() {
   document.querySelector('.note p').textContent = api.mock ? 'Demo services. Do not use for travel.' : 'Data via railinfo · Network Rail & National Rail feeds';
   document.querySelector('#journey .eyebrow').textContent = api.mock ? 'Service details · Demo' : 'Service details';
   document.body.dataset.theme = settings.theme;
-  document.querySelector('meta[name="theme-color"]').content = { retro: '#f2f0e8', modern: '#f3f4ef', midnight: '#0c131d' }[settings.theme];
+  document.querySelector('meta[name="theme-color"]').content = { retro: '#f2f0e8', modern: '#f2f0e8', midnight: '#f2f0e8' }[settings.theme];
   $('station-name').textContent = settings.stationName;
   $('station-code').textContent = settings.crs;
   updateClock();
