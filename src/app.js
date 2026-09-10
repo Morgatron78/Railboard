@@ -1,4 +1,6 @@
-import { mockProvider as api, statusText } from './api.js';
+import { statusText } from './api.js';
+import { api } from './provider.js';
+import { paintLED } from './led.js';
 import { read, write, clearBoard, validateSettings, matchingCache } from './storage.js';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -7,6 +9,8 @@ let boardType = settings.board;
 let board = null;
 let request = 0;
 let loading = false;
+let staleBoard = true;
+const cacheKey = () => `board:${api.mock ? 'mock' : 'railinfo'}:${settings.crs}:${boardType}`;
 const scenario = new URLSearchParams(location.search).get('demo') || 'normal';
 const time = value => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(value));
 function updateClock() {
@@ -18,23 +22,42 @@ function updateClock() {
 setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
 function applySettings() {
+  document.querySelector('.demo-badge').textContent = api.mock ? 'Demo data' : 'Live board';
+  document.querySelector('.note p').textContent = api.mock ? 'Demo services. Do not use for travel.' : 'Data via railinfo · Network Rail & National Rail feeds';
+  document.querySelector('#journey .eyebrow').textContent = api.mock ? 'Service details · Demo' : 'Service details';
   document.body.dataset.theme = settings.theme;
-  document.querySelector('meta[name="theme-color"]').content = { retro: '#121512', modern: '#f3f4ef', midnight: '#0c131d' }[settings.theme];
+  document.querySelector('meta[name="theme-color"]').content = { retro: '#003b73', modern: '#f3f4ef', midnight: '#0c131d' }[settings.theme];
   $('station-name').textContent = settings.stationName;
   $('station-code').textContent = settings.crs;
   updateClock();
+  $('display-title').textContent = boardType;
   $('refresh-status').textContent = settings.autoRefresh ? 'Refreshes every 30s' : 'Manual refresh';
   for (const type of ['departures', 'arrivals']) $(type).setAttribute('aria-pressed', String(type === boardType));
   $('destination-label').textContent = `${boardType === 'arrivals' ? 'Origin' : 'Destination'} / Status`;
 }
 function renderBoard(stale = false) {
+  staleBoard = stale;
   $('services').innerHTML = board.services.length ? board.services.map((service, index) => {
     const name = boardType === 'arrivals' ? service.origin : service.destination;
-    return `<button class="service" data-index="${index}"><span class="time">${escape(service.scheduled)}</span><span><span class="destination">${escape(name)}${settings.favourite && name.toLowerCase() === settings.favourite.toLowerCase() ? ' ★' : ''}</span><span class="service-info"><span class="status ${escape(service.status)}">${escape(statusText(service))}</span>${service.transport === 'bus' ? '<span>· Replacement bus</span>' : ''}${service.platformChanged ? '<span>· Platform changed</span>' : ''}</span></span><span class="platform ${service.platformChanged ? 'changed' : ''}" aria-label="${service.transport === 'bus' ? 'Bus' : `Platform ${escape(service.platform || 'unassigned')}`}">${service.transport === 'bus' ? 'B' : escape(service.platform || '—')}</span></button>`;
+    return `<button class="service" data-index="${index}"><span class="time">${escape(service.scheduled)}</span><span><span class="destination">${escape(name)}${settings.favourite && name.toLowerCase() === settings.favourite.toLowerCase() ? ' ★' : ''}</span><span class="service-info">${service.day > 0 ? `<span>+${service.day} day</span>` : ""}<span class="status ${escape(service.status)}">${escape(statusText(service))}</span>${service.transport === 'bus' ? '<span>· Replacement bus</span>' : ''}${service.platformChanged ? '<span>· Platform changed</span>' : ''}</span></span><span class="platform ${service.platformChanged ? 'changed' : ''}" aria-label="${service.transport === 'bus' ? 'Bus' : `Platform ${escape(service.platform || 'unassigned')}`}">${service.transport === 'bus' ? 'B' : escape(service.platform || '—')}</span></button>`;
   }).join('') : `<div class="empty">No ${boardType} to show.<br>Try refreshing the board shortly.</div>`;
-  $('update-status').textContent = stale ? `Cached demo · ${new Date(board.generatedAt).toLocaleDateString('en-GB')} ${time(board.generatedAt)} · ${navigator.onLine ? 'Update failed' : 'Offline'}` : `Updated ${time(board.generatedAt)} · Demo`;
+  const old = stale || Date.now() - Date.parse(board.generatedAt) > 90000;
+  $('update-status').textContent = old ? `Cached ${api.mock ? 'demo' : 'board'} · ${new Date(board.generatedAt).toLocaleDateString('en-GB')} ${time(board.generatedAt)} · ${!navigator.onLine ? 'Offline' : stale ? 'Update failed' : 'Data may be out of date'}` : `Updated ${time(board.generatedAt)}${api.mock ? ' · Demo' : ''}`;
+  $('board-messages').textContent = (board.messages || []).join(' ');
+  $('board-messages').hidden = !board.messages?.length;
+  if(settings.theme === 'retro') paintLED($('services'));
+}
+async function openBoard() {
+  const cached = settings.cacheBoard ? read(cacheKey()) : null;
+  if(matchingCache(cached,settings,boardType,api.mock)) { board=cached; renderBoard(true); }
+  else {
+    $('services').innerHTML='<div class="empty">Please wait. Updating information...</div>';
+    if(settings.theme==='retro') paintLED($('services'));
+  }
+  return refresh();
 }
 async function refresh() {
+  if(loading) return;
   const current = ++request;
   loading = true;
   $('refresh').disabled = true;
@@ -44,26 +67,35 @@ async function refresh() {
     const result = await api[boardType === 'departures' ? 'getDepartures' : 'getArrivals']({ crs: settings.crs, count: settings.count, scenario });
     if (current !== request) return;
     board = result;
-    if (settings.cacheBoard) write('board', board);
+    if (settings.cacheBoard) write(cacheKey(), board);
     renderBoard();
   } catch {
     if (current !== request) return;
-    const cached = settings.cacheBoard ? read('board') : null;
-    if (!board && matchingCache(cached, settings, boardType)) board = cached;
+    const cached = settings.cacheBoard ? read(cacheKey()) : null;
+    if (!board && matchingCache(cached, settings, boardType, api.mock)) board = cached;
     if (board) renderBoard(true);
     else {
       $('services').innerHTML = '<div class="empty">Your board is unavailable.<br>Check your connection and try Refresh.</div>';
-      $('update-status').textContent = navigator.onLine ? 'Could not update · Demo' : 'Offline · No saved board';
+      $('board-messages').hidden = true;
+      $('update-status').textContent = navigator.onLine ? `Could not update${api.mock ? ' · Demo' : ''}` : 'Offline · No saved board';
+      if(settings.theme === 'retro') paintLED($('services'));
     }
   } finally {
     if (current === request) { loading = false; $('refresh').disabled = false; $('services').setAttribute('aria-busy', 'false'); }
   }
 }
-function stationOptions(query = '', selected = settings.crs) {
-  const matches = api.searchStations(query);
+let searchId = 0;
+async function stationOptions(query = '', selected = settings.crs) {
+  const id = ++searchId;
+  let matches;
+  try { matches = query.trim() ? await api.searchStations(query) : [{crs:settings.crs,name:settings.stationName}]; }
+  catch { if(id===searchId) $('station-help').textContent='Station search unavailable. Try again.'; return; }
+  if(id !== searchId) return;
+  $('station-help').textContent = matches.length ? 'Select a station by name or CRS code.' : 'No matching stations.';
   $('station-select').innerHTML = matches.map(s => `<option value="${s.crs}">${escape(s.name)} — ${s.crs}</option>`).join('');
   if (matches.some(s => s.crs === selected)) $('station-select').value = selected;
-  if (!matches.length) $('station-select').innerHTML = '<option value="">No matching demo stations</option>';
+  if (!matches.length) $('station-select').innerHTML = '<option value="">No matching stations</option>';
+  for (const option of $('station-select').options) option.dataset.name = matches.find(s=>s.crs===option.value)?.name || '';
 }
 function openPreferences() {
   const first = !settings.onboarded;
@@ -82,30 +114,34 @@ function openPreferences() {
   $('cache-board').checked = settings.cacheBoard;
   $('preferences').showModal();
 }
-$('station-search').addEventListener('input', event => stationOptions(event.target.value, $('station-select').value));
+let searchTimer;
+$('station-search').addEventListener('input', event => { clearTimeout(searchTimer); ++searchId; const q=event.target.value; searchTimer=setTimeout(()=>stationOptions(q,$('station-select').value),300); });
 $('preferences-form').addEventListener('submit', event => {
   event.preventDefault();
-  settings = validateSettings({ crs: $('station-select').value, theme: new FormData(event.target).get('theme'), board: $('default-board').value, count: Number($('service-count').value), favourite: $('favourite').value.trim(), autoRefresh: $('auto-refresh').checked, cacheBoard: $('cache-board').checked, onboarded: true });
+  const previous = settings;
+  settings = validateSettings({ crs: $('station-select').value, stationName: $('station-select').selectedOptions[0]?.dataset.name, theme: new FormData(event.target).get('theme'), board: $('default-board').value, count: Number($('service-count').value), favourite: $('favourite').value.trim(), autoRefresh: $('auto-refresh').checked, cacheBoard: $('cache-board').checked, onboarded: true });
   const saved = write('settings', settings);
   if (!settings.cacheBoard) clearBoard();
-  boardType = settings.board;
-  board = null;
+  const changed = previous.crs !== settings.crs || previous.count !== settings.count || previous.board !== settings.board;
+  if(changed) { boardType = settings.board; board = null; ++request; loading=false; }
   $('preferences').close();
   applySettings();
-  refresh().then(() => { if (!saved) $('update-status').textContent += ' · Preferences could not be saved on this device'; });
+  (changed ? openBoard() : Promise.resolve(board && renderBoard(staleBoard))).then(() => { if (!saved) $('update-status').textContent += ' · Preferences could not be saved on this device'; });
 });
 $('preferences').addEventListener('cancel', event => { if (!settings.onboarded) event.preventDefault(); });
 $('settings-button').addEventListener('click', openPreferences);
 $('close-preferences').addEventListener('click', () => $('preferences').close());
 $('close-journey').addEventListener('click', () => $('journey').close());
 $('refresh').addEventListener('click', refresh);
-for (const type of ['departures', 'arrivals']) $(type).addEventListener('click', () => { if (type === boardType) return; boardType = type; board = null; applySettings(); refresh(); });
+for (const type of ['departures', 'arrivals']) $(type).addEventListener('click', () => { if (type === boardType) return; boardType = type; board = null; ++request; loading=false; applySettings(); openBoard(); });
 $('services').addEventListener('click', async event => {
   const button = event.target.closest('[data-index]');
   if (!button || !board) return;
-  const service = await api.getServiceDetails(board.services[Number(button.dataset.index)]);
+  const service = board.services[Number(button.dataset.index)];
   const fields = { From: service.origin, To: service.destination, Scheduled: service.scheduled, Expected: service.status === 'cancelled' ? 'Cancelled' : service.expected || 'Unconfirmed', Platform: service.transport === 'bus' ? 'Replacement bus' : `${service.platform || 'Unassigned'}${service.platformChanged ? ' (changed)' : ''}`, Operator: service.operator };
-  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3><ol class="timeline">${service.callingPoints.map(point => `<li><span>${escape(point.scheduled)}</span><span>${escape(point.name)}${point.expected && point.expected !== point.scheduled ? `<small>Expected ${escape(point.expected)}</small>` : service.status === 'cancelled' ? '<small>Cancelled</small>' : ''}</span></li>`).join('')}</ol><p class="hint">Illustrative route and times · Not for travel</p>`;
+  const groups = service.callingGroups?.length ? service.callingGroups : [{ points: service.callingPoints }];
+  const timeline = groups.map(group => `${groups.length > 1 ? `<h4>${escape(group.label)}</h4>` : ''}<ol class="timeline">${group.points.map(point => `<li><span>${escape(point.scheduled)}</span><span>${escape(point.name)}${point.status === 'cancelled' || service.status === 'cancelled' ? '<small>Cancelled</small>' : point.actual ? `<small>Actual ${escape(point.actual)}</small>` : point.expected && point.expected !== point.scheduled ? `<small>Expected ${escape(point.expected)}</small>` : ''}</span></li>`).join('')}</ol>`).join('');
+  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<p>Calling points are not supplied by this live board. No estimated route is shown.</p>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Board received ${time(board.generatedAt)}`}</p>`;
   $('journey').showModal();
 });
 setInterval(() => { if (settings.autoRefresh && !document.hidden && !loading) refresh(); }, 30000);
@@ -113,6 +149,6 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && se
 window.addEventListener('online', refresh);
 window.addEventListener('offline', () => { if (board) renderBoard(true); });
 applySettings();
-refresh();
+openBoard();
 if (!settings.onboarded) openPreferences();
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { $('refresh-status').textContent = 'Offline shell unavailable'; });

@@ -123,3 +123,50 @@ body[data-theme=retro] .destination {
   body[data-theme=retro] .time { font-size: 28px; }
   body[data-theme=retro] .destination { font-size: 21px; }
 }
+/* Retro specification: printed identity, station strip, electronic display. */
+:root{--br-blue:#003b73;--br-off-white:#f2f0e8;--led-amber:#ffb000;--led-off:#302818}
+.strapline{display:block;font-size:12px;letter-spacing:0;font-weight:400;margin-top:4px}
+.display-heading{display:flex;justify-content:space-between;gap:16px;align-items:baseline;padding:18px 0}
+#station-clock{font-size:28px;font-variant-numeric:tabular-nums}
+#display-title{font-size:24px;font-weight:700}
+body[data-theme=retro]{--bg:#10100e;--board:#10100e;--accent:var(--led-amber);--good:var(--led-amber);--text:#f2f0e8;--muted:#c3b99f;--line:#383124;--soft:#211d13}
+body[data-theme=retro] .shell{max-width:980px;padding:0 max(0px,env(safe-area-inset-right)) max(20px,env(safe-area-inset-bottom)) max(0px,env(safe-area-inset-left))}
+body[data-theme=retro] .masthead{background:var(--br-off-white);color:var(--br-blue);padding:max(16px,env(safe-area-inset-top)) 20px 16px;border:0;min-height:72px}
+body[data-theme=retro] .brand{font-size:23px;font-weight:800;letter-spacing:1px}
+body[data-theme=retro] .brand img{width:34px;height:34px}
+body[data-theme=retro] .station-heading{background:var(--br-blue);color:white;padding:20px;display:flex;align-items:center;flex-wrap:nowrap;gap:12px}
+body[data-theme=retro] .station-heading>div{flex:1;min-width:0}
+body[data-theme=retro] h1{font-size:30px;margin:0 0 8px;letter-spacing:-.5px}
+body[data-theme=retro] .station-meta{display:flex;flex-wrap:wrap;color:#fff;font-size:16px;font-weight:400;gap:6px 12px}
+body[data-theme=retro] #station-code{color:white;font-size:16px}
+body[data-theme=retro] #settings-button{color:white;border:1px solid #88a7c4;padding:8px 10px;font-size:15px}
+body[data-theme=retro] .display-heading{padding:22px 20px 12px;color:var(--accent);text-transform:uppercase}
+body[data-theme=retro] .board-toolbar{padding:0 20px 12px;margin:0}
+body[data-theme=retro] .tabs button{font-size:16px;color:var(--muted)}
+body[data-theme=retro] .tabs button[aria-pressed=true]{color:var(--accent);border-color:var(--accent)}
+body[data-theme=retro] .board{border:0;background:none;border-radius:0}
+body[data-theme=retro] .board-head,body[data-theme=retro] .service{grid-template-columns:115px minmax(0,1fr) 48px;padding-left:20px;padding-right:20px;gap:16px}
+body[data-theme=retro] .board-head{background:#1d1c17;font-size:16px;color:#f2f0e8;border-block:1px solid var(--line)}
+body[data-theme=retro] .service{padding-top:22px;padding-bottom:22px;border-bottom:1px solid #29251c}
+body[data-theme=retro] .time,body[data-theme=retro] .destination{background:none;color:var(--accent);font-size:inherit;letter-spacing:0}
+body[data-theme=retro] .time{--cell:20px;line-height:1;white-space:nowrap}
+body[data-theme=retro] .destination{--cell:14px;line-height:1.5}
+body[data-theme=retro] .status{--cell:8px;color:var(--accent);font-size:inherit}
+body[data-theme=retro] .platform{--cell:17px;border:0;display:block;min-height:0;color:var(--accent)}
+.led-text{display:inline;line-height:1.6}
+.led-word{display:inline;overflow-wrap:anywhere}
+.led-glyph{display:inline-block;width:var(--cell,12px);height:calc(var(--cell,12px)*1.4);margin-right:calc(var(--cell,12px)*.2);vertical-align:baseline}
+.led-space{display:inline-block;width:calc(var(--cell,12px)*.65)}
+.led-glyph .lit{fill:var(--led-amber)}
+.led-glyph .unlit{fill:var(--led-off)}
+body[data-theme=retro] .status.cancelled .lit{fill:#ff7463}
+body[data-theme=retro] .empty{--cell:13px;text-align:left;line-height:2;padding:28px 20px;color:var(--accent)}
+body[data-theme=retro] .board-footer,body[data-theme=retro] .note,body[data-theme=retro] .page-footer{margin:0;padding:16px 20px;font-size:14px}
+body[data-theme=retro] .note{display:block}
+body[data-theme=retro] .demo-badge{font-size:12px;display:block;margin-top:6px}
+body[data-theme=retro] #journey{background:var(--br-off-white);color:#121820;--muted:#4b5863;--line:#b9c4cc;--accent:#003b73}
+body[data-theme=retro] #journey h2,body[data-theme=retro] #journey h3{color:var(--br-blue)}
+body[data-theme=retro] #journey .status{color:#003b73;font-size:16px}
+@media(max-width:520px){body[data-theme=retro] .board-head,body[data-theme=retro] .service{grid-template-columns:91px minmax(0,1fr) 29px;gap:10px;padding-left:14px;padding-right:14px}body[data-theme=retro] .time{--cell:15px}body[data-theme=retro] .destination{--cell:11px}body[data-theme=retro] .platform{--cell:15px}body[data-theme=retro] .status{--cell:7px}body[data-theme=retro] .board-head{font-size:14px}body[data-theme=retro] .station-heading{padding:18px 14px}body[data-theme=retro] h1{font-size:27px}body[data-theme=retro] .station-meta{font-size:13px}body[data-theme=retro] #station-code{font-size:13px}#display-title{font-size:22px}#station-clock{font-size:24px}}
+body[data-theme=retro] .time{--cell:18px}
+@media(max-width:520px){body[data-theme=retro] .time{--cell:15px}}

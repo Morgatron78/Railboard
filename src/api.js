@@ -60,6 +60,8 @@ export const mockProvider = {
 export function statusText(service) {
   if (service.status === 'cancelled') return 'Cancelled';
   if (service.status === 'unknown') return 'Time unconfirmed';
-  if (service.status === 'delayed') return `Expected ${service.expected} · +${service.delay} min`;
+  if (service.status === 'scheduled') return 'Scheduled';
+  if (service.status === 'delayed') return service.expected ? `Expected ${service.expected}${service.delay > 0 ? ` · +${service.delay} min` : ''}` : 'Delayed';
+  if (service.status === 'early') return `Expected ${service.expected}`;
   return 'On time';
 }

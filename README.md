@@ -1,10 +1,14 @@
 # Railboard
 
-A small, iPhone-first UK railway board PWA. v0.1 uses **simulated data only**.
+A small, iPhone-first UK railway PWA. The current iteration uses the public railinfo.uk API directly; no account, API key, Worker or backend is required.
 
-The requirements are in [Railboard — Codex Project Brief.md](Railboard%20%E2%80%94%20Codex%20Project%20Brief.md).
+## Source of truth
 
-## Run locally
+- `RAILBOARD-DESIGN-SPEC.md` defines UI and theme direction.
+- `RAILBOARD-API-SPEC.md` supersedes the original LDBWS/Cloudflare architecture.
+- `Railboard — Codex Project Brief.md` supplies the broader product context.
+
+## Run
 
 Requires Node.js 22 or later. No dependencies or build step.
 
@@ -13,49 +17,46 @@ npm start
 npm test
 ```
 
-Open http://localhost:4173/Railboard/ (also works at `/`). Use localhost rather than opening the HTML file directly so ES modules and service workers work.
+Open http://localhost:4173/Railboard/. Add `?demo=normal` for mock data, `?demo=empty` for the empty state, or `?demo=error` for failure testing. Live mode never substitutes mock services.
 
-## Included in v0.1
+## This iteration
 
-- Bromsgrove default, first-run setup, searchable selection of 19 demo stations.
-- Retro LED, Modern Rail and Midnight themes.
-- Departures/arrivals, 4/6/8/10 services, optional favourite highlighting.
-- Service details and calling-point timelines; disruption and replacement-bus examples.
-- Validated local preferences; optional last-board cache with explicit stale/offline state.
-- Refresh every 30 seconds while visible; manual refresh and reconnect recovery.
-- Relative-path PWA manifest, offline shell, PNG installation icons and original train mark.
+- Live departures and arrivals with centrally normalized times, statuses, platforms and operator information.
+- Debounced remote station search; station name and CRS saved locally.
+- 30-second foreground refresh, in-flight request deduplication, timeout and Retry-After cooldown.
+- Per-station/per-board saved data, explicitly labelled cached until refreshed.
+- Retro corporate header, blue station strip, original 5×7 SVG LED cells and printed-timetable detail treatment.
+- Existing Modern and Midnight layouts retained for subsequent design passes.
+- Offline app shell with separate application-managed board snapshots.
 
-All routes, times and operators are illustrative, including at alternative stations. A full station catalogue and live data belong to the next phase.
+## Provider observations
 
-## GitHub Pages
+Verified against public responses on 10 September 2026 and https://railinfo.uk/developers:
 
-In repository **Settings → Pages**, select **Deploy from a branch**, `main`, `/ (root)` after these files are committed and pushed. No build is required. All application URLs are relative and work below `/Railboard/` or `/railboard/`.
+Both board endpoints currently return a `departures` array; arrival responses use `kind: arrivals`, `public_dep` for the board time and `destination` for the arriving service's origin. These provider conventions are isolated in `src/provider.js`.
 
-The app uses HTTPS on Pages. On iPhone, open the site in Safari and use **Share → Add to Home Screen**. Visit online once before testing offline. Actual iPhone installation should be verified on a device before release.
-
-The service worker precaches only application assets. Increment `CACHE` in `sw.js` whenever shipping shell changes. An updated worker takes over after existing app tabs close, avoiding mixed application versions. Never put API responses or credentials in the shell cache.
+The response has no generation timestamp: the app records receipt time. It returns a stop count but no exact calling-point list. Live detail therefore shows available metadata and an explicit unavailable message, never a fabricated timeline. Future journey integration must not imply an unrelated journey plan is the selected train.
 
 ## Structure
 
-- `src/app.js`: UI, settings, refresh lifecycle and journey dialogs.
-- `src/api.js`: provider interface and deterministic mock generator.
-- `src/storage.js`: defensive persistence and cache matching.
-- `styles.css`: shared responsive layout and theme tokens.
-- `sw.js`, `manifest.webmanifest`, `icons/`: PWA assets.
-- `scripts/serve.js`: local server with project-path support.
-- `tests/`: Node tests for providers and persisted settings.
+- `src/api.js`: mock fixtures and shared status text.
+- `src/provider.js`: public API adapter, validation, deduplication and cooldown.
+- `src/config.js`: public API base URL only.
+- `src/storage.js`: preferences and cache matching.
+- `src/app.js`: shared board/UI lifecycle.
+- `src/led.js`: original glyph definitions and cached SVG renderer.
+- `sw.js`: versioned shell cache only; bump its version when shipping assets.
 
-For v0.2, replace `mockProvider` with a Worker-backed provider exposing `getDepartures`, `getArrivals`, `getServiceDetails`, and `searchStations`. Keep National Rail credentials exclusively in Worker secrets. The browser must never receive them.
+## Deploy
 
-## Verification
+GitHub Pages: deploy `main`, `/ (root)`. Relative asset paths support the project site and the custom domain in `CNAME`. Close existing PWA tabs and reopen after an update to activate the new shell.
 
-`npm test` covers disruptions, arrival endpoints, station search, empty/error scenarios, corrupt preferences, and cache isolation. For browser checks:
+## Validation and remaining work
 
-1. Complete onboarding; change themes and station in Settings; reload to verify persistence.
-2. Inspect departures, arrivals and a cancelled/delayed service's calling points.
-3. Select 10 services to see replacement buses and platform changes.
-4. Open `?demo=empty` for an empty board or `?demo=error` for cached/error states.
-5. Visit normally online, then disable network and reload to test the offline shell and cached board.
-6. Check 320px and 390px widths, keyboard navigation, and an actual iPhone installation.
+`npm test` covers API field mapping, disruptions, arrivals, missing data, request deduplication, rate limiting, station persistence, LED cells and offline shell assets. Live API reads were verified; a physical iPhone pass remains necessary.
 
-No live backend or publishing credentials are required for v0.1.
+Next: compare Retro visually with the design specification, refine Modern then Midnight, and evaluate truthful detail enhancements as provider data permits. The supplied `App Icon` asset has not been modified.
+
+### Current browser-access blocker
+
+On 10 September 2026, both station search and board responses returned HTTP 200 but omitted `Access-Control-Allow-Origin`, including when requested with `Origin: https://railboard.morgantech.co.uk`. Server-side adapter verification passes, but direct cross-origin browser fetches are blocked until the provider enables CORS. Live mode therefore shows the unavailable state; use `?demo=normal` to preview design. No proxy or secret infrastructure has been introduced. Do not describe this iteration as a working deployed live-data release.
