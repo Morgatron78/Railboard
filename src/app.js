@@ -22,6 +22,7 @@ function updateClock() {
 setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
 function applySettings() {
+  document.querySelector('.note').hidden = !api.mock;
 
   $('attribution').innerHTML = api.mock ? 'Demo services · Not for travel' : 'Data via railinfo<span class="attribution-break"> · </span>Network Rail &amp; National Rail feeds';
   document.querySelector('#journey .eyebrow').textContent = api.mock ? 'Service details · Demo' : 'Service details';
@@ -94,19 +95,50 @@ async function refresh() {
     if (current === request) { loading = false; $('refresh').disabled = false; $('services').setAttribute('aria-busy', 'false'); }
   }
 }
-let searchId = 0;
-async function stationOptions(query = '', selected = settings.crs) {
-  const id = ++searchId;
-  let matches;
-  try { matches = query.trim() ? await api.searchStations(query) : [{crs:settings.crs,name:settings.stationName}]; }
-  catch { if(id===searchId) $('station-help').textContent='Station search unavailable. Try again.'; return; }
-  if(id !== searchId) return;
-  $('station-help').textContent = matches.length ? 'Select a station by name or CRS code.' : 'No matching stations.';
-  $('station-select').innerHTML = matches.map(s => `<option value="${s.crs}">${escape(s.name)} — ${s.crs}</option>`).join('');
-  if (matches.some(s => s.crs === selected)) $('station-select').value = selected;
-  if (!matches.length) $('station-select').innerHTML = '<option value="">No matching stations</option>';
-  for (const option of $('station-select').options) option.dataset.name = matches.find(s=>s.crs===option.value)?.name || '';
+function stationPicker(inputId, listId, helpId, select) {
+  const input = $(inputId), list = $(listId), help = $(helpId);
+  let matches = [], revision = 0, timer;
+  const label = s => `${s.name} — ${s.crs}`;
+  const selected = () => matches.find(s => label(s) === input.value);
+  list.addEventListener('click', event => {
+    const button = event.target.closest('[data-station]');
+    if(!button) return;
+    const station = matches[Number(button.dataset.station)];
+    input.value = label(station); input.setCustomValidity('');
+    ++revision; clearTimeout(timer); select(station); list.hidden = true; help.textContent = ''; input.focus();
+  });
+  input.addEventListener('input', () => {
+    clearTimeout(timer); const id = ++revision;
+    input.setCustomValidity(''); help.textContent = '';
+    if(selected()) { select(selected()); list.hidden = true; return; }
+    const query = input.value.trim();
+    list.hidden = true;
+    if(!query) { list.replaceChildren(); return; }
+    timer = setTimeout(async () => {
+      try {
+        const result = await api.searchStations(query);
+        if(id !== revision) return;
+        matches = result;
+        list.innerHTML = matches.map((s,i) => `<button type="button" data-station="${i}">${escape(label(s))}</button>`).join('');
+        list.hidden = !matches.length;
+        help.textContent = matches.length ? '' : 'No matching stations.';
+      } catch { if(id === revision) help.textContent = 'Station search unavailable. Try again.'; }
+    }, 300);
+  });
+  return {
+    reset(station) {
+      clearTimeout(timer); ++revision; matches = station ? [station] : [];
+      input.value = station ? label(station) : ''; input.setCustomValidity(''); help.textContent = '';
+      list.replaceChildren(); list.hidden = true;
+      if(station) select(station);
+    },
+    selected
+  };
 }
+const homePicker = stationPicker('station-search', 'home-suggestions', 'station-help', station => {
+  $('station-select').innerHTML = `<option value="${escape(station.crs)}" data-name="${escape(station.name)}">${escape(station.name)}</option>`;
+});
+const favouritePicker = stationPicker('favourite', 'favourite-suggestions', 'favourite-help', () => {});
 function openPreferences() {
   const first = !settings.onboarded;
   $('preferences-title').textContent = first ? 'Welcome to Railboard' : 'Settings';
@@ -114,8 +146,9 @@ function openPreferences() {
   $('close-preferences').hidden = first;
   $('welcome-copy').hidden = !first;
   $('save-preferences').textContent = first ? 'Show board' : 'Save settings';
-  $('station-search').value = '';
-  stationOptions();
+  homePicker.reset({crs:settings.crs,name:settings.stationName});
+  favouritePicker.reset();
+  document.querySelector('.retro-preview .sample').innerHTML = `<span aria-label="17:19 Four Oaks" class="led-text">${led('17:19')}<br>${led('Four Oaks')}</span>`;
   document.querySelector(`input[name="theme"][value="${settings.theme}"]`).checked = true;
   $('default-board').value = settings.board;
   $('service-count').value = settings.count;
@@ -124,10 +157,13 @@ function openPreferences() {
   $('cache-board').checked = settings.cacheBoard;
   $('preferences').showModal();
 }
-let searchTimer;
-$('station-search').addEventListener('input', event => { clearTimeout(searchTimer); ++searchId; const q=event.target.value; searchTimer=setTimeout(()=>stationOptions(q,$('station-select').value),300); });
 $('preferences-form').addEventListener('submit', event => {
   event.preventDefault();
+  if (!homePicker.selected()) {
+    $('station-search').setCustomValidity('Choose a station from the suggestions.');
+    $('station-search').reportValidity(); return;
+  }
+  if (favouritePicker.selected()) $('favourite').value = favouritePicker.selected().name;
   const previous = settings;
   settings = validateSettings({ crs: $('station-select').value, stationName: $('station-select').selectedOptions[0]?.dataset.name, theme: new FormData(event.target).get('theme'), board: $('default-board').value, count: Number($('service-count').value), favourite: $('favourite').value.trim(), autoRefresh: $('auto-refresh').checked, cacheBoard: $('cache-board').checked, onboarded: true });
   const saved = write('settings', settings);

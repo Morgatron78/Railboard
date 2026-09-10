@@ -346,3 +346,35 @@ body[data-theme=retro] .attribution-break{display:block;font-size:0;line-height:
 body[data-theme=retro] .board-footer{border-top:0}
 /* Render the supplied pictogram geometry directly, without raster filters. */
 .brand .pictogram,body[data-theme=retro] .brand .pictogram{display:block;flex:0 0 45px;width:45px;height:36px}
+
+/* Compact railway settings sheet. */
+#preferences{padding:18px 20px max(16px,env(safe-area-inset-bottom));border-top-width:3px}
+#preferences .dialog-heading{border-bottom-width:1px;padding-bottom:8px;margin-bottom:12px}
+#preferences h2{font-size:26px}
+#preferences #close-preferences{flex-basis:32px;width:32px;height:32px;min-width:32px;min-height:32px;border:1px solid var(--br-blue);font-size:17px}
+#preferences label,#preferences legend{margin-top:12px;margin-bottom:6px;font-size:14px}
+#preferences input[type=search],#preferences select{min-height:42px;padding:10px;border:1px solid var(--br-blue);border-radius:0;background-color:#fffdf7}
+#preferences select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23003b73' stroke-width='2'/%3E%3C/svg%3E");background-position:right 12px center;background-repeat:no-repeat;background-size:12px 8px;padding-right:32px}
+#preferences .hint{font-size:11px;margin:4px 0;line-height:1.35}
+#preferences .hint:empty{display:none}
+#preferences fieldset{margin:8px 0}
+#preferences .theme-preview{margin:0;padding:8px 6px;font-size:12px;border-width:1px;position:relative}
+#preferences .theme-preview input{position:absolute;opacity:0;width:1px;height:1px}
+#preferences .theme-preview:has(:focus-visible){outline:2px solid var(--br-blue);outline-offset:2px}
+#preferences .sample{font-size:12px;margin:0 0 6px;padding:6px 0;border-top:5px solid var(--br-blue);border-bottom:1px solid currentColor;min-height:50px}
+#preferences .retro-preview .sample{--cell:4px;color:var(--led-amber)}
+#preferences .modern-preview{color:var(--br-blue)}
+#preferences .midnight-preview{color:#f4f6f8}
+#preferences .retro-preview{color:var(--led-amber)}
+#preferences label[for=favourite]{font-weight:400}
+#preferences .toggle{margin:4px 0 0;padding:8px 0;gap:12px}
+#preferences .toggle small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:3px}
+#preferences .toggle input{appearance:none;position:relative;flex:0 0 45px;width:45px;height:25px;border:1px solid var(--br-blue);border-radius:2px;background:transparent;margin:0;cursor:pointer}
+#preferences .toggle input:checked{background:var(--br-blue)}
+#preferences .toggle input:after{content:'OFF';display:block;text-align:center;font:700 10px/23px Arial;color:var(--br-blue)}
+#preferences .toggle input:checked:after{content:'ON';color:white}
+#preferences .primary{margin-top:14px;padding:10px;min-height:44px;font-size:16px;border-bottom-width:3px}
+#preferences .settings-about{border-top:1px solid var(--line);margin-top:12px;padding-top:8px;color:var(--muted);font-size:11px;line-height:1.4}
+#preferences .settings-about h3{font-size:12px;font-weight:400;margin:0 0 4px}
+#preferences .settings-about p{margin:0}
+#preferences .station-suggestions{max-height:150px;overflow-y:auto;border:1px solid var(--br-blue);border-top:0} #preferences .station-suggestions button{display:block;width:100%;text-align:left;font-size:14px;padding:8px 10px;min-height:44px;border-bottom:1px solid var(--line);color:var(--br-blue)} #preferences .station-suggestions button:hover{background:var(--surface)}
