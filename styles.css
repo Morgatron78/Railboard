@@ -287,7 +287,8 @@ body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body
 .timeline .passed-call{color:var(--muted)}
 
 /* Approved compact layout: one navigation/clock row and a standalone brand mark. */
-.masthead,body[data-theme=retro] .masthead{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:12px;border-bottom-width:3px;min-height:0}
+/* Keep the brand below the iPhone top-edge treatment, even in the compact layout. */
+.masthead,body[data-theme=retro] .masthead{padding-top:calc(env(safe-area-inset-top) + 24px);padding-bottom:12px;border-bottom-width:3px;min-height:0}
 .brand img.pictogram,body[data-theme=retro] .brand img.pictogram{width:45px;height:36px;object-fit:contain}
 .brand .wordmark,body[data-theme=retro] .brand .wordmark{border-left:1px solid var(--br-blue);padding-left:10px;width:190px;height:45px}
 .station-heading,body[data-theme=retro] .station-heading,body:not([data-theme=retro]) .station-heading{padding-top:16px;padding-bottom:16px}
@@ -343,3 +344,5 @@ body[data-theme=retro] .note p{color:#948c78}
 body[data-theme=retro] .attribution-break{display:block;font-size:0;line-height:0}
 .footer-warning{font-size:11px;color:var(--muted);margin:2px 14px}
 body[data-theme=retro] .board-footer{border-top:0}
+/* Render the supplied pictogram geometry directly, without raster filters. */
+.brand .pictogram,body[data-theme=retro] .brand .pictogram{display:block;flex:0 0 45px;width:45px;height:36px}
