@@ -1,6 +1,6 @@
 import { statusText } from './api.js';
 import { api } from './provider.js';
-import { paintLED } from './led.js';
+import { paintLED, led } from './led.js';
 import { read, write, clearBoard, validateSettings, matchingCache } from './storage.js';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -15,33 +15,42 @@ const scenario = new URLSearchParams(location.search).get('demo') || 'normal';
 const time = value => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(value));
 function updateClock() {
   const now = new Date();
-  $('today').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' }).format(now);
+  $('today').textContent = new Intl.DateTimeFormat('en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'Europe/London' }).format(now);
   $('station-clock').textContent = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(now);
   $('station-clock').dateTime = now.toISOString();
 }
 setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
 function applySettings() {
-  document.querySelector('.demo-badge').textContent = api.mock ? 'Demo data' : 'Live board';
-  document.querySelector('.note p').textContent = api.mock ? 'Demo services. Do not use for travel.' : 'Data via railinfo · Network Rail & National Rail feeds';
+
+  $('attribution').innerHTML = api.mock ? 'Demo services · Not for travel' : 'Data via railinfo<span class="attribution-break"> · </span>Network Rail &amp; National Rail feeds';
   document.querySelector('#journey .eyebrow').textContent = api.mock ? 'Service details · Demo' : 'Service details';
   document.body.dataset.theme = settings.theme;
   document.querySelector('meta[name="theme-color"]').content = { retro: '#f2f0e8', modern: '#f2f0e8', midnight: '#f2f0e8' }[settings.theme];
   $('station-name').textContent = settings.stationName;
   $('station-code').textContent = settings.crs;
   updateClock();
-  $('display-title').textContent = boardType;
-  $('refresh-status').textContent = settings.autoRefresh ? 'Refreshes every 30s' : 'Manual refresh';
+  if (!board) $('board-state').replaceChildren();
+
+
   for (const type of ['departures', 'arrivals']) $(type).setAttribute('aria-pressed', String(type === boardType));
   $('destination-label').textContent = `${boardType === 'arrivals' ? 'Origin' : 'Destination'} / Status`;
+}
+function renderFooterState(label) {
+  const el = $('board-state');
+  el.dataset.state = label.toLowerCase();
+  el.innerHTML = settings.theme === 'retro'
+    ? `<span class="sr-only">${label}</span><span class="led-text" aria-hidden="true">${led(label)}</span>`
+    : escape(label);
 }
 function renderBoard(stale = false) {
   staleBoard = stale;
   $('services').innerHTML = board.services.length ? board.services.map((service, index) => {
     const name = boardType === 'arrivals' ? service.origin : service.destination;
-    return `<button class="service" data-index="${index}"><span class="time">${escape(service.scheduled)}</span><span><span class="destination">${escape(name)}${settings.favourite && name.toLowerCase() === settings.favourite.toLowerCase() ? ' ★' : ''}</span><span class="service-info">${service.day > 0 ? `<span>+${service.day} day</span>` : ""}<span class="status ${escape(service.status)}">${escape(statusText(service))}</span>${service.transport === 'bus' ? '<span>· Replacement bus</span>' : ''}${service.platformChanged ? '<span>· Platform changed</span>' : ''}</span></span><span class="platform ${service.platformChanged ? 'changed' : ''}" aria-label="${service.transport === 'bus' ? 'Bus' : `Platform ${escape(service.platform || 'unassigned')}`}">${service.transport === 'bus' ? 'B' : escape(service.platform || '—')}</span></button>`;
+    return `<button class="service" data-index="${index}"><span class="time">${escape(service.scheduled)}</span><span><span class="destination-line"><span class="destination">${escape(name)}</span>${settings.favourite && name.toLowerCase() === settings.favourite.toLowerCase() ? '<span class="favourite-marker" aria-label="Favourite destination">☆</span>' : ''}</span><span class="service-info">${service.day > 0 ? `<span>+${service.day} day</span>` : ""}<span class="status ${escape(service.status)}">${escape(statusText(service))}</span>${service.transport === 'bus' ? '<span>· Replacement bus</span>' : ''}${service.platformChanged ? '<span>· Platform changed</span>' : ''}</span></span><span class="platform ${service.platformChanged ? 'changed' : ''}" aria-label="${service.transport === 'bus' ? 'Bus' : `Platform ${escape(service.platform || 'unassigned')}`}">${service.transport === 'bus' ? 'B' : escape(service.platform || '—')}</span></button>`;
   }).join('') : `<div class="empty">No ${boardType} to show.<br>Try refreshing the board shortly.</div>`;
   const old = stale || Date.now() - Date.parse(board.generatedAt) > 90000;
+  renderFooterState(old ? 'Cached' : api.mock ? 'Demo' : 'Live');
   $('update-status').textContent = old ? `Cached ${api.mock ? 'demo' : 'board'} · ${new Date(board.generatedAt).toLocaleDateString('en-GB')} ${time(board.generatedAt)} · ${!navigator.onLine ? 'Offline' : stale ? 'Update failed' : 'Data may be out of date'}` : `Updated ${time(board.generatedAt)}${api.mock ? ' · Demo' : ''}`;
   $('board-messages').textContent = (board.messages || []).join(' ');
   $('board-messages').hidden = !board.messages?.length;
@@ -77,6 +86,7 @@ async function refresh() {
     else {
       $('services').innerHTML = '<div class="empty">Your board is unavailable.<br>Check your connection and try Refresh.</div>';
       $('board-messages').hidden = true;
+      renderFooterState('Unavailable');
       $('update-status').textContent = navigator.onLine ? `Could not update${api.mock ? ' · Demo' : ''}` : 'Offline · No saved board';
       if(settings.theme === 'retro') paintLED($('services'));
     }
@@ -161,4 +171,4 @@ window.addEventListener('offline', () => { if (board) renderBoard(true); });
 applySettings();
 openBoard();
 if (!settings.onboarded) openPreferences();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { $('refresh-status').textContent = 'Offline shell unavailable'; });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { $('refresh-status').hidden = false; $('refresh-status').textContent = 'Offline shell unavailable'; });

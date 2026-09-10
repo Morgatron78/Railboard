@@ -285,3 +285,61 @@ body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body
 .timeline .current-call{font-weight:700}
 .timeline .current-call:after{background:var(--accent)}
 .timeline .passed-call{color:var(--muted)}
+
+/* Approved compact layout: one navigation/clock row and a standalone brand mark. */
+.masthead,body[data-theme=retro] .masthead{padding-top:calc(env(safe-area-inset-top) + 12px);padding-bottom:12px;border-bottom-width:3px;min-height:0}
+.brand img.pictogram,body[data-theme=retro] .brand img.pictogram{width:45px;height:36px;object-fit:contain}
+.brand .wordmark,body[data-theme=retro] .brand .wordmark{border-left:1px solid var(--br-blue);padding-left:10px;width:190px;height:45px}
+.station-heading,body[data-theme=retro] .station-heading,body:not([data-theme=retro]) .station-heading{padding-top:16px;padding-bottom:16px}
+#settings-button,body[data-theme=retro] #settings-button,body:not([data-theme=retro]) #settings-button{font-size:12px;font-weight:700;letter-spacing:.3px;padding:6px 8px;min-height:44px;border-radius:0;white-space:nowrap}
+.station-meta,body[data-theme=retro] .station-meta{gap:6px 8px}
+.board-toolbar,body[data-theme=retro] .board-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0;padding:8px 14px}
+.tabs,body[data-theme=retro] .tabs{gap:14px;flex-shrink:0}
+.tabs button,body[data-theme=retro] .tabs button{font-size:16px;min-height:44px;padding:0 0 3px}
+.board-actions{display:flex;align-items:center;gap:4px;margin-left:auto}
+#station-clock{font-size:21px;line-height:1;font-weight:700;white-space:nowrap}
+#refresh{padding:0;flex:0 0 44px;width:44px;height:44px;font-size:30px}
+body[data-theme=retro] .board-actions{color:var(--led-amber)}
+.board-head,body[data-theme=retro] .board-head{text-transform:uppercase;font-size:13px;letter-spacing:.2px;padding-top:10px;padding-bottom:10px}
+.service,body[data-theme=retro] .service{padding-top:16px;padding-bottom:16px}
+.destination-line{display:flex;align-items:baseline;gap:6px}
+.destination-line .destination{min-width:0}
+.favourite-marker{font:20px/1 Arial,Helvetica,sans-serif;flex:0 0 auto;color:var(--accent)}
+body:not([data-theme=retro]) .time{font-size:28px;font-weight:700}
+@media(max-width:520px){
+ .brand,body[data-theme=retro] .brand{gap:8px}
+ .brand .wordmark,body[data-theme=retro] .brand .wordmark{width:164px;height:42px;padding-left:8px}
+ .station-heading,body[data-theme=retro] .station-heading,body:not([data-theme=retro]) .station-heading{padding-top:15px;padding-bottom:15px}
+ .service,body[data-theme=retro] .service{padding-top:14px;padding-bottom:14px}
+ .board-head,.service{grid-template-columns:70px minmax(0,1fr) 42px}
+ body[data-theme=retro] .board-head,body[data-theme=retro] .service{grid-template-columns:91px minmax(0,1fr) 42px}
+ .board-head,body[data-theme=retro] .board-head{font-size:11px}
+ body:not([data-theme=retro]) .time{font-size:25px}
+}
+@media(max-width:380px){
+ .brand .wordmark,body[data-theme=retro] .brand .wordmark{width:140px;height:36px}
+ .board-toolbar,body[data-theme=retro] .board-toolbar{gap:6px;padding-left:10px;padding-right:10px}
+ .tabs,body[data-theme=retro] .tabs{gap:10px}
+ .tabs button,body[data-theme=retro] .tabs button{font-size:14px}
+ #station-clock{font-size:18px}
+ .board-actions{gap:0}
+}
+
+/* Low-weight status and attribution beneath the railway display. */
+.board-footer,body[data-theme=retro] .board-footer{justify-content:flex-start;align-items:baseline;gap:5px;padding:8px 14px 3px;margin:0;border-top:1px solid var(--line);font-size:12px;line-height:1.3}
+#update-status{font-size:12px;font-weight:400;color:var(--muted)}
+#board-state{white-space:nowrap;font-size:12px}
+#board-state:empty{display:none}
+#board-state:before{content:'';display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--muted);margin-right:5px;vertical-align:middle}
+#board-state[data-state=live]:before{background:var(--good)}
+body:not([data-theme=retro]) #board-state:not(:empty):after{content:' ·';color:var(--muted)}
+body[data-theme=retro] .board-footer{justify-content:space-between;gap:6px 16px}
+body[data-theme=retro] #board-state{--cell:5px;color:var(--led-amber)}
+body[data-theme=retro] #board-state:before{background:var(--led-amber)}
+body[data-theme=retro] #update-status{text-transform:uppercase;font-size:11px;text-align:right}
+.note,body[data-theme=retro] .note{display:block;margin:0;padding:2px 14px 8px;border:0}
+.note p,body[data-theme=retro] .note p{font-size:11px;line-height:1.35;font-weight:400;color:var(--muted);margin:0}
+body[data-theme=retro] .note p{color:#948c78}
+body[data-theme=retro] .attribution-break{display:block;font-size:0;line-height:0}
+.footer-warning{font-size:11px;color:var(--muted);margin:2px 14px}
+body[data-theme=retro] .board-footer{border-top:0}
