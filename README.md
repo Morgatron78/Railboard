@@ -60,3 +60,7 @@ Next: compare Retro visually with the design specification, refine Modern then M
 ### Current browser-access blocker
 
 On 10 September 2026, both station search and board responses returned HTTP 200 but omitted `Access-Control-Allow-Origin`, including when requested with `Origin: https://railboard.morgantech.co.uk`. Server-side adapter verification passes, but direct cross-origin browser fetches are blocked until the provider enables CORS. Live mode therefore shows the unavailable state; use `?demo=normal` to preview design. No proxy or secret infrastructure has been introduced. Do not describe this iteration as a working deployed live-data release.
+
+### Cloudflare deployment — 10 September 2026
+
+The user approved a Cloudflare proxy because direct provider CORS is unavailable. The proxy is deployed at https://railboard-proxy.morgan-cope.workers.dev and `src/config.js` now uses it. Departures, arrivals and station search returned HTTP 200 with the site's CORS origin. Earlier direct-access blocker notes above describe the superseded setup. No credentials are used for rail data. See `worker/README.md` for deployment details.

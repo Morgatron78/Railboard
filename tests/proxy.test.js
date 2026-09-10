@@ -1,0 +1,27 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { handleRequest } from '../worker/index.js';
+const origin='https://railboard.morgantech.co.uk';
+const env={ALLOWED_ORIGINS:origin};
+const req=(path='/boards/BMV/departures?limit=6',site=origin)=>new Request(`https://proxy.test${path}`,{headers:{Origin:site}});
+test('proxy restricts destinations, parameters, origins and methods',async()=>{
+  const deps={fetch:()=>assert.fail('must not fetch')};
+  for(const [path,status] of [['/arbitrary',404],['/boards/BMV/departures?limit=999',400],['/stations?q=x&url=https://other.test',400]]) assert.equal((await handleRequest(req(path),env,{},deps)).status,status);
+  assert.equal((await handleRequest(req(undefined,'https://other.test'),env,{},deps)).status,403);
+  assert.equal((await handleRequest(new Request('https://proxy.test/stations',{method:'POST'}),env,{},deps)).status,405);
+});
+test('proxy returns browser CORS headers and reuses successful cache',async()=>{
+  let calls=0;const saved=new Map();const jobs=[];
+  const deps={cache:{match:async k=>saved.get(k.url)?.clone(),put:async(k,r)=>saved.set(k.url,r)},fetch:async(url,options)=>{
+    calls++;assert.equal(url.origin,'https://api.railinfo.uk');assert.equal(options.redirect,'manual');
+    return Response.json({departures:[]});
+  }};
+  const ctx={waitUntil:p=>jobs.push(p)};
+  const first=await handleRequest(req(),env,ctx,deps);assert.equal(first.status,200);assert.equal(first.headers.get('Access-Control-Allow-Origin'),origin);
+  await Promise.all(jobs);assert.equal((await handleRequest(req(),env,ctx,deps)).status,200);assert.equal(calls,1);
+});
+test('rate limits stay visible to browser and malformed upstream data fails',async()=>{
+  const limited=await handleRequest(req(),env,{}, {fetch:async()=>new Response('',{status:429,headers:{'Retry-After':'120'}})});
+  assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'120');assert.equal(limited.headers.get('Access-Control-Expose-Headers'),'Retry-After');
+  const broken=await handleRequest(req(),env,{}, {fetch:async()=>Response.json({error:'bad'})});assert.equal(broken.status,502);
+});

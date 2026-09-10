@@ -154,7 +154,7 @@ body[data-theme=retro] .destination{--cell:14px;line-height:1.5}
 body[data-theme=retro] .status{--cell:8px;color:var(--accent);font-size:inherit}
 body[data-theme=retro] .platform{--cell:17px;border:0;display:block;min-height:0;color:var(--accent)}
 .led-text{display:inline;line-height:1.6}
-.led-word{display:inline;overflow-wrap:anywhere}
+.led-word{display:inline-flex;white-space:nowrap;overflow-wrap:normal;max-width:100%;vertical-align:baseline;align-items:center}
 .led-glyph{display:inline-block;width:var(--cell,12px);height:calc(var(--cell,12px)*1.4);margin-right:calc(var(--cell,12px)*.2);vertical-align:baseline}
 .led-space{display:inline-block;width:calc(var(--cell,12px)*.65)}
 .led-glyph .lit{fill:var(--led-amber)}
@@ -170,3 +170,7 @@ body[data-theme=retro] #journey .status{color:#003b73;font-size:16px}
 @media(max-width:520px){body[data-theme=retro] .board-head,body[data-theme=retro] .service{grid-template-columns:91px minmax(0,1fr) 29px;gap:10px;padding-left:14px;padding-right:14px}body[data-theme=retro] .time{--cell:15px}body[data-theme=retro] .destination{--cell:11px}body[data-theme=retro] .platform{--cell:15px}body[data-theme=retro] .status{--cell:7px}body[data-theme=retro] .board-head{font-size:14px}body[data-theme=retro] .station-heading{padding:18px 14px}body[data-theme=retro] h1{font-size:27px}body[data-theme=retro] .station-meta{font-size:13px}body[data-theme=retro] #station-code{font-size:13px}#display-title{font-size:22px}#station-clock{font-size:24px}}
 body[data-theme=retro] .time{--cell:18px}
 @media(max-width:520px){body[data-theme=retro] .time{--cell:15px}}
+
+.led-word .led-glyph:last-child{margin-right:0}
+
+.led-word .led-glyph{flex:0 1 auto;min-width:0;height:auto;aspect-ratio:5/7}

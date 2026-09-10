@@ -1,0 +1,7 @@
+name = "railboard-proxy"
+main = "index.js"
+compatibility_date = "2026-09-10"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://railboard.morgantech.co.uk,https://morgatron78.github.io,http://localhost:4173,http://127.0.0.1:4175"
