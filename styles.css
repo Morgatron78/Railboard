@@ -553,3 +553,6 @@ body:not([data-theme=retro]) .tabs button[aria-pressed=true]{border-bottom-color
  content:'';position:absolute;left:0;right:0;bottom:7px;height:3px;background:var(--br-red);
 }
 body[data-theme=retro] .tabs button[aria-pressed=true]:after{background:var(--accent)}
+/* Cancellation takes precedence over theme and supporting-text colours. */
+body #journey .cancelled,
+body[data-theme=retro] #journey .status.cancelled{color:var(--br-red)}
