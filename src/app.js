@@ -37,6 +37,11 @@ function applySettings() {
   for (const type of ['departures', 'arrivals']) $(type).setAttribute('aria-pressed', String(type === boardType));
   $('destination-label').textContent = `${boardType === 'arrivals' ? 'Origin' : 'Destination'} / Status`;
 }
+function setUpdateStatus(text) {
+  $('update-status').innerHTML = settings.theme === 'retro'
+    ? `<span class="sr-only">${escape(text)}</span><span class="led-text" aria-hidden="true">${led(text)}</span>`
+    : escape(text);
+}
 function renderFooterState(label) {
   const el = $('board-state');
   el.dataset.state = label.toLowerCase();
@@ -52,7 +57,7 @@ function renderBoard(stale = false) {
   }).join('') : `<div class="empty">No ${boardType} to show.<br>Try refreshing the board shortly.</div>`;
   const old = stale || Date.now() - Date.parse(board.generatedAt) > 90000;
   renderFooterState(old ? 'Cached' : api.mock ? 'Demo' : 'Live');
-  $('update-status').textContent = old ? `Cached ${api.mock ? 'demo' : 'board'} · ${new Date(board.generatedAt).toLocaleDateString('en-GB')} ${time(board.generatedAt)} · ${!navigator.onLine ? 'Offline' : stale ? 'Update failed' : 'Data may be out of date'}` : `Updated ${time(board.generatedAt)}${api.mock ? ' · Demo' : ''}`;
+  setUpdateStatus(old ? `Cached ${api.mock ? 'demo' : 'board'} · ${new Date(board.generatedAt).toLocaleDateString('en-GB')} ${time(board.generatedAt)} · ${!navigator.onLine ? 'Offline' : stale ? 'Update failed' : 'Data may be out of date'}` : `Updated ${time(board.generatedAt)}${api.mock ? ' · Demo' : ''}`);
   $('board-messages').textContent = (board.messages || []).join(' ');
   $('board-messages').hidden = !board.messages?.length;
   if(settings.theme === 'retro') paintLED($('services'));
@@ -88,7 +93,7 @@ async function refresh() {
       $('services').innerHTML = '<div class="empty">Your board is unavailable.<br>Check your connection and try Refresh.</div>';
       $('board-messages').hidden = true;
       renderFooterState('Unavailable');
-      $('update-status').textContent = navigator.onLine ? `Could not update${api.mock ? ' · Demo' : ''}` : 'Offline · No saved board';
+      setUpdateStatus(navigator.onLine ? `Could not update${api.mock ? ' · Demo' : ''}` : 'Offline · No saved board');
       if(settings.theme === 'retro') paintLED($('services'));
     }
   } finally {
@@ -172,7 +177,7 @@ $('preferences-form').addEventListener('submit', event => {
   if(changed) { boardType = settings.board; board = null; ++request; loading=false; }
   $('preferences').close();
   applySettings();
-  (changed ? openBoard() : Promise.resolve(board && renderBoard(staleBoard))).then(() => { if (!saved) $('update-status').textContent += ' · Preferences could not be saved on this device'; });
+  (changed ? openBoard() : Promise.resolve(board && renderBoard(staleBoard))).then(() => { if (!saved) setUpdateStatus($('update-status').textContent + ' · Preferences could not be saved on this device'); });
 });
 $('preferences').addEventListener('cancel', event => { if (!settings.onboarded) event.preventDefault(); });
 $('settings-button').addEventListener('click', openPreferences);

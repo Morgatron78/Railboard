@@ -378,3 +378,26 @@ body[data-theme=retro] .board-footer{border-top:0}
 #preferences .settings-about h3{font-size:12px;font-weight:400;margin:0 0 4px}
 #preferences .settings-about p{margin:0}
 #preferences .station-suggestions{max-height:150px;overflow-y:auto;border:1px solid var(--br-blue);border-top:0} #preferences .station-suggestions button{display:block;width:100%;text-align:left;font-size:14px;padding:8px 10px;min-height:44px;border-bottom:1px solid var(--line);color:var(--br-blue)} #preferences .station-suggestions button:hover{background:var(--surface)}
+
+/* Retro footer uses the same LED cell sizes as service statuses. */
+body[data-theme=retro] #board-state,
+body[data-theme=retro] #update-status{--cell:8px;color:var(--led-amber);font-size:inherit}
+@media(max-width:520px){
+ body[data-theme=retro] #board-state,
+ body[data-theme=retro] #update-status{--cell:7px}
+}
+
+/* Compact printed station sign, with a full-sized invisible touch target. */
+#settings-button,body[data-theme=retro] #settings-button,body:not([data-theme=retro]) #settings-button{
+ padding:0;border:0;border-radius:0;background:transparent;min-height:44px;
+ color:var(--br-blue);letter-spacing:0;flex-shrink:0;
+}
+#settings-button .settings-sign{
+ display:flex;align-items:center;gap:7px;padding:6px 9px;
+ background:var(--br-off-white);color:var(--br-blue);
+ font:800 17px/1.15 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.4px;
+}
+#settings-button svg{display:block;width:22px;height:20px;fill:var(--br-blue);flex-shrink:0}
+body[data-theme=retro] #settings-button .settings-sign{color:#131816}
+body[data-theme=retro] #settings-button svg{fill:#369dcc}
+#settings-button:hover .settings-sign{background:#fffdf7}
