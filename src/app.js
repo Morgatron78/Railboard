@@ -305,7 +305,7 @@ $('services').addEventListener('click', async event => {
   if(target && !api.mock) {
     const controls = document.createElement('section');
     controls.className = 'train-tools';
-    controls.innerHTML = '<div class="train-tool-buttons"><button type="button" class="follow-train" aria-pressed="false">Follow this train</button><button type="button" class="locate-train" aria-expanded="false">Where is my train?</button></div><p class="detail-updated" role="status">Loading calling points…</p><div class="train-location" hidden></div>';
+    controls.innerHTML = '<div class="train-tool-buttons"><button type="button" class="follow-train rail-sign-action" aria-pressed="false">Follow this train</button><button type="button" class="locate-train rail-sign-action" aria-expanded="false">Where is my train?</button></div><p class="detail-updated" role="status">Loading calling points…</p><div class="train-location" hidden></div>';
     summary.after(controls);
     const followButton = controls.querySelector('.follow-train');
     const locateButton = controls.querySelector('.locate-train');

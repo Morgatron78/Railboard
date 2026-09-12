@@ -1,4 +1,4 @@
-const CACHE = 'railboard-shell-v30';
+const CACHE = 'railboard-shell-v31';
 const ASSETS = ['./', './index.html', './styles.css', './src/app.js', './src/api.js', './src/storage.js', './src/config.js', './src/provider.js', './src/led.js', './manifest.webmanifest', './icons/favicon.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 ASSETS.push('./icons/wordmark.svg');
 ASSETS.push('./src/detail.js', './src/tracking.js', './src/updates.js');

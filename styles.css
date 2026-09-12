@@ -506,3 +506,25 @@ body:not([data-theme=retro]) #board-state:not(:empty):after{content:' · ';white
 .detail-meta dd,.timeline li span:last-child{overflow-wrap:anywhere;min-width:0}
 
 #journey .train-tool-buttons button{min-height:44px}
+#preferences button.rail-sign-action,
+#journey button.rail-sign-action,
+#station-switcher button.rail-sign-action,
+#destination-journeys button.rail-sign-action,
+button#app-update.rail-sign-action{
+ display:inline-flex;align-items:center;justify-content:space-between;gap:8px;
+ width:auto;max-width:100%;min-height:44px;padding:7px 9px;
+ border:0;border-radius:0;box-shadow:none;
+ background:var(--br-off-white);color:var(--br-blue);
+ font:800 14.28px/1.15 'Helvetica Neue',Helvetica,Arial,sans-serif;
+ letter-spacing:-.336px;text-align:left;text-transform:none;
+}
+.rail-sign-action:after{
+ content:'';display:block;flex:0 0 18.48px;width:18.48px;height:16.8px;
+ background:currentColor;
+ clip-path:polygon(25% 4%,56% 4%,100% 50%,56% 96%,25% 96%,53% 64%,0 64%,0 36%,53% 36%);
+}
+#journey button.rail-sign-action[aria-pressed=true],
+#journey button.rail-sign-action[aria-expanded=true]{box-shadow:inset 0 -2px var(--br-red)}
+button.rail-sign-action:hover:not(:disabled){background:#fffdf7}
+button.rail-sign-action:focus-visible{outline:2px solid var(--br-blue);outline-offset:2px}
+body #refresh{background:var(--br-off-white);color:var(--br-blue);border:0;border-radius:0}
