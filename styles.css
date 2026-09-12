@@ -473,10 +473,12 @@ body:not([data-theme=retro]) #board-state:not(:empty):after{content:' · ';white
 #journey .train-tools{margin:10px 0;border-top:1px solid var(--line);padding:8px 0}
 #journey .train-tool-buttons{display:flex;flex-wrap:wrap;gap:8px}
 #journey .train-tool-buttons button{border:1px solid var(--accent);padding:7px 10px;font-size:13px;min-height:40px;color:var(--accent)}
-#journey .train-tool-buttons button[aria-pressed=true]{background:var(--br-blue);color:white}
 #journey .detail-updated{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.4}
 #journey .train-location p{font-size:13px;line-height:1.4}
-#journey .train-location iframe{display:block;width:100%;height:230px;border:1px solid var(--line)}
+#journey .train-map{width:100%;height:260px;border:1px solid var(--line);color:#17212b}
+#journey .train-map .maplibregl-ctrl button{min-height:29px;border-radius:0}
+#journey .train-map .maplibregl-ctrl-attrib{font:11px/20px Arial,sans-serif;color:#17212b}
+#journey .map-error:empty{display:none}
 
 .destination-action{display:block;min-height:44px;margin-top:12px;padding:8px 10px;border:1px solid var(--br-blue);color:var(--br-blue);font-size:14px}
 #destination-journeys{padding:18px 20px max(16px,env(safe-area-inset-bottom));border-top-width:3px}

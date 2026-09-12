@@ -1,7 +1,7 @@
-const CACHE = 'railboard-shell-v33';
+const CACHE = 'railboard-shell-v34';
 const ASSETS = ['./', './index.html', './styles.css', './src/app.js', './src/api.js', './src/storage.js', './src/config.js', './src/provider.js', './src/led.js', './manifest.webmanifest', './icons/favicon.png', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'];
 ASSETS.push('./icons/wordmark.svg');
-ASSETS.push('./src/detail.js', './src/tracking.js', './src/updates.js');
+ASSETS.push('./src/detail.js', './src/tracking.js', './src/updates.js', './src/map.js');
 self.addEventListener('message', event => {
   if(event.data?.type === 'ACTIVATE_UPDATE') event.waitUntil(self.skipWaiting());
 });

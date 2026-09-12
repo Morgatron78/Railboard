@@ -2,6 +2,7 @@ import { statusText } from './api.js';
 import { favouriteStop, journeyProgress } from './detail.js';
 import { createFollower } from './tracking.js';
 import { watchUpdates } from './updates.js';
+import { createTrainMap } from './map.js';
 import { api } from './provider.js';
 import { paintLED, led } from './led.js';
 import { read, write, clearBoard, validateSettings, matchingCache, recentStations } from './storage.js';
@@ -311,22 +312,28 @@ $('services').addEventListener('click', async event => {
     const locateButton = controls.querySelector('.locate-train');
     const updateLabel = controls.querySelector('.detail-updated');
     const locationPanel = controls.querySelector('.train-location');
+    const trainMap = createTrainMap();
+    const clearLocation = message => { trainMap.destroy(); locationPanel.textContent = message; };
     let disposed = false, points = null, refreshing = false, locating = false, locationRevision = 0;
     const active = () => !disposed && target.isConnected && $('journey').open;
     async function locate() {
       if(!active() || locating || locationPanel.hidden) return;
       if(!points) { locationPanel.textContent = 'Load calling points before locating this train.'; return; }
       locating = true; const revision = ++locationRevision;
-      locationPanel.textContent = 'Checking estimated position…';
+      if(!locationPanel.querySelector('.train-map')) locationPanel.textContent = 'Checking estimated position…';
       try {
         const position = await api.getTrainPosition({service,points});
         if(!active() || locationPanel.hidden || revision !== locationRevision) return;
-        if(!position) { locationPanel.textContent = 'A reliable current position is not available for this service.'; return; }
+        if(!position) { clearLocation('A reliable current position is not available for this service.'); return; }
         const {lat,lon} = position;
-        const bbox = [lon-.035,lat-.02,lon+.035,lat+.02].join(',');
-        const mapUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik&marker=${lat},${lon}`;
-        locationPanel.innerHTML = `<h3>Estimated position</h3><p>${position.last ? `Last reported: ${escape(position.last)}.` : ''} ${position.next ? `Next: ${escape(position.next)}.` : ''}</p><iframe title="Estimated train position on OpenStreetMap" src="${mapUrl}" loading="lazy" referrerpolicy="no-referrer"></iframe><p class="hint">Estimated, not GPS · Map feed ${time(position.generatedAt)} · <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=13/${lat}/${lon}" target="_blank" rel="noopener noreferrer">Open map</a></p>`;
-      } catch { if(active() && !locationPanel.hidden) locationPanel.textContent = 'Position temporarily unavailable. Close and reopen the map to try again.'; }
+        if(!locationPanel.querySelector('.train-map')) locationPanel.innerHTML = '<h3>Estimated position</h3><p class="position-report"></p><div class="train-map" role="region" aria-label="Estimated train position map"></div><p class="map-error hint" role="status"></p><p class="map-credit hint"></p>';
+        locationPanel.querySelector('.position-report').textContent = `${position.last ? `Last reported: ${position.last}.` : ''} ${position.next ? `Next: ${position.next}.` : ''}`;
+        locationPanel.querySelector('.map-credit').innerHTML = `Estimated, not GPS · Map feed ${time(position.generatedAt)} · <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=13/${lat}/${lon}" target="_blank" rel="noopener noreferrer">Open map</a>`;
+        await trainMap.show(locationPanel.querySelector('.train-map'), position, () => {
+          const warning = locationPanel.querySelector('.map-error');
+          if(warning) warning.textContent = 'Some map detail could not load. Close and reopen the map to retry.';
+        });
+      } catch { if(active() && !locationPanel.hidden && revision === locationRevision) clearLocation('Map or position temporarily unavailable. Close and reopen the map to try again.'); }
       finally { locating = false; }
     }
     async function refreshDetail() {
@@ -353,7 +360,7 @@ $('services').addEventListener('click', async event => {
       if(progress === 'Journey complete') {
         follower.stop(); followButton.setAttribute('aria-pressed','false');
         followButton.textContent = 'Journey complete'; followButton.disabled = true;
-        locateButton.disabled = true; locationPanel.hidden = true;
+        locateButton.disabled = true; locationPanel.hidden = true; trainMap.destroy();
         locateButton.setAttribute('aria-expanded','false'); ++locationRevision;
       }
       updateLabel.textContent = `Calling points received ${time(new Date())}${followButton.getAttribute('aria-pressed') === 'true' ? ' · Following every 30s while visible' : ''}`;
@@ -365,7 +372,7 @@ $('services').addEventListener('click', async event => {
         if(favourite) summary.textContent = 'Your stop information is unavailable until calling points can be loaded.';
         target.textContent = 'Calling points temporarily unavailable.';
       }
-      if(!locationPanel.hidden) locationPanel.textContent = 'Position unavailable until live updates recover.';
+      if(!locationPanel.hidden) { ++locationRevision; clearLocation('Position unavailable until live updates recover.'); }
     } finally { refreshing = false; }
     }
     const follower = createFollower(refreshDetail);
@@ -380,18 +387,18 @@ $('services').addEventListener('click', async event => {
       locationPanel.hidden = !locationPanel.hidden;
       locateButton.setAttribute('aria-expanded',String(!locationPanel.hidden));
       if(!locationPanel.hidden) locate();
-      else { ++locationRevision; locationPanel.replaceChildren(); }
+      else { ++locationRevision; clearLocation(''); }
     });
     const resume = () => { if(!document.hidden) follower.resume(); };
     const offline = () => {
       if(!active()) return;
       updateLabel.textContent = 'Offline · Showing previously received information.';
-      if(!locationPanel.hidden) locationPanel.textContent = 'Position unavailable while offline.';
+      if(!locationPanel.hidden) { ++locationRevision; clearLocation('Position unavailable while offline.'); }
     };
     document.addEventListener('visibilitychange',resume);
     window.addEventListener('online',resume);
     window.addEventListener('offline',offline);
-    disposeDetail = () => { disposed = true; follower.dispose(); ++locationRevision; document.removeEventListener('visibilitychange',resume); window.removeEventListener('online',resume); window.removeEventListener('offline',offline); };
+    disposeDetail = () => { disposed = true; follower.dispose(); trainMap.destroy(); ++locationRevision; document.removeEventListener('visibilitychange',resume); window.removeEventListener('online',resume); window.removeEventListener('offline',offline); };
     await refreshDetail();
   }
 });

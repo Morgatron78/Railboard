@@ -106,6 +106,6 @@ Run `npm test` before publishing. The suite covers provider mapping, arrivals, d
 
 Also check the installed iPhone app after visual changes, especially safe-area rendering, station suggestions, theme switching, service details and recovery after going offline.
 
-Train maps load OpenStreetMap only when requested. Positions are estimates, not GPS. Ambiguous, stale and unsupported overnight matches show an unavailable message; the app does not guess a train from its destination. Following retains previous calling points with a warning if refreshing fails, and stops when the detail sheet closes.
+Train maps load MapLibre GL JS 5.6.0 from unpkg and OpenFreeMap vector tiles only when requested; no account or API key is needed. Map attribution remains visible. The marker updates without resetting the map camera, and closing the sheet releases the map resources. Positions are estimates, not GPS. Ambiguous, stale and unsupported overnight matches show an unavailable message; the app does not guess a train from its destination. Following retains previous calling points with a warning if refreshing fails, and stops when the detail sheet closes.
 
 Destination journeys use the same railinfo provider through a validated proxy route. Results refresh on request and keep scheduled times distinct from live status; no arrival prediction is inferred from a delay label.
