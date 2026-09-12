@@ -35,6 +35,27 @@ export function createTrainMap({load = loadLibrary} = {}) {
         marker = new gl.Marker({color:'#003b73'}).setLngLat(coordinates).addTo(map);
       } else marker.setLngLat(coordinates);
     },
+    resize() { map?.resize(); },
     destroy() { ++revision; marker?.remove(); map?.remove(); marker = map = null; }
+  };
+}
+
+export function expandableMap(dialog, panel, resize) {
+  function setExpanded(expanded) {
+    dialog.classList.toggle('map-expanded', expanded);
+    const button = panel.querySelector('.expand-map');
+    if(button) { button.textContent = expanded ? 'Back to service details' : 'Expand map'; button.setAttribute('aria-expanded', String(expanded)); }
+    resize();
+    button?.focus({preventScroll:true});
+  }
+  const click = event => { if(event.target.closest('.expand-map')) setExpanded(!dialog.classList.contains('map-expanded')); };
+  const cancel = event => {
+    if(dialog.classList.contains('map-expanded')) { event.preventDefault(); setExpanded(false); }
+  };
+  panel.addEventListener('click', click);
+  dialog.addEventListener('cancel', cancel);
+  return {
+    reset() { if(dialog.classList.contains('map-expanded')) setExpanded(false); },
+    dispose() { dialog.classList.remove('map-expanded'); panel.removeEventListener('click',click); dialog.removeEventListener('cancel',cancel); }
   };
 }

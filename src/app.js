@@ -2,7 +2,7 @@ import { statusText } from './api.js';
 import { favouriteStop, journeyProgress, detailStatus } from './detail.js';
 import { createFollower } from './tracking.js';
 import { watchUpdates } from './updates.js';
-import { createTrainMap } from './map.js';
+import { createTrainMap, expandableMap } from './map.js';
 import { api } from './provider.js';
 import { paintLED, led } from './led.js';
 import { read, write, clearBoard, validateSettings, matchingCache, recentStations } from './storage.js';
@@ -313,7 +313,8 @@ $('services').addEventListener('click', async event => {
     const updateLabel = controls.querySelector('.detail-updated');
     const locationPanel = controls.querySelector('.train-location');
     const trainMap = createTrainMap();
-    const clearLocation = message => { trainMap.destroy(); locationPanel.textContent = message; };
+    const expansion = expandableMap($('journey'), locationPanel, () => trainMap.resize());
+    const clearLocation = message => { expansion.reset(); trainMap.destroy(); locationPanel.textContent = message; };
     let disposed = false, points = null, refreshing = false, locating = false, locationRevision = 0;
     const active = () => !disposed && target.isConnected && $('journey').open;
     async function locate() {
@@ -325,10 +326,9 @@ $('services').addEventListener('click', async event => {
         const position = await api.getTrainPosition({service,points});
         if(!active() || locationPanel.hidden || revision !== locationRevision) return;
         if(!position) { clearLocation('A reliable current position is not available for this service.'); return; }
-        const {lat,lon} = position;
-        if(!locationPanel.querySelector('.train-map')) locationPanel.innerHTML = '<h3>Estimated position</h3><p class="position-report"></p><div class="train-map" role="region" aria-label="Estimated train position map"></div><p class="map-error hint" role="status"></p><p class="map-credit hint"></p>';
+        if(!locationPanel.querySelector('.train-map')) locationPanel.innerHTML = '<h3>Estimated position</h3><button type="button" class="expand-map rail-sign-action" aria-expanded="false">Expand map</button><p class="position-report"></p><div class="train-map" role="region" aria-label="Estimated train position map"></div><p class="map-error hint" role="status"></p><p class="map-credit hint"></p>';
         locationPanel.querySelector('.position-report').textContent = `${position.last ? `Last reported: ${position.last}.` : ''} ${position.next ? `Next: ${position.next}.` : ''}`;
-        locationPanel.querySelector('.map-credit').innerHTML = `Estimated, not GPS · Map feed ${time(position.generatedAt)} · <a href="https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=13/${lat}/${lon}" target="_blank" rel="noopener noreferrer">Open map</a>`;
+        locationPanel.querySelector('.map-credit').textContent = `Estimated, not GPS · Map feed ${time(position.generatedAt)}`;
         await trainMap.show(locationPanel.querySelector('.train-map'), position, () => {
           const warning = locationPanel.querySelector('.map-error');
           if(warning) warning.textContent = 'Some map detail could not load. Close and reopen the map to retry.';
@@ -362,7 +362,7 @@ $('services').addEventListener('click', async event => {
       if(progress === 'Journey complete') {
         follower.stop(); followButton.setAttribute('aria-pressed','false');
         followButton.textContent = 'Journey complete'; followButton.disabled = true;
-        locateButton.disabled = true; locationPanel.hidden = true; trainMap.destroy();
+        locateButton.disabled = true; expansion.reset(); locationPanel.hidden = true; trainMap.destroy();
         locateButton.setAttribute('aria-expanded','false'); ++locationRevision;
       }
       updateLabel.textContent = `Calling points received ${time(new Date())}${followButton.getAttribute('aria-pressed') === 'true' ? ' · Following every 30s while visible' : ''}`;
@@ -400,7 +400,7 @@ $('services').addEventListener('click', async event => {
     document.addEventListener('visibilitychange',resume);
     window.addEventListener('online',resume);
     window.addEventListener('offline',offline);
-    disposeDetail = () => { disposed = true; follower.dispose(); trainMap.destroy(); ++locationRevision; document.removeEventListener('visibilitychange',resume); window.removeEventListener('online',resume); window.removeEventListener('offline',offline); };
+    disposeDetail = () => { disposed = true; follower.dispose(); expansion.dispose(); trainMap.destroy(); ++locationRevision; document.removeEventListener('visibilitychange',resume); window.removeEventListener('online',resume); window.removeEventListener('offline',offline); };
     await refreshDetail();
   }
 });

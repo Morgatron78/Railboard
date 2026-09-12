@@ -556,3 +556,11 @@ body[data-theme=retro] .tabs button[aria-pressed=true]:after{background:var(--ac
 /* Cancellation takes precedence over theme and supporting-text colours. */
 body #journey .cancelled,
 body[data-theme=retro] #journey .status.cancelled{color:var(--br-red)}
+/* Expand the existing vector canvas within the modal, preserving its camera. */
+body #journey.map-expanded{width:100%;max-width:none;height:100dvh;max-height:100dvh;margin:0;padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));overflow:auto}
+#journey.map-expanded>.dialog-heading,#journey.map-expanded #journey-content>:not(.train-tools),#journey.map-expanded .train-tools>:not(.train-location){display:none}
+#journey.map-expanded #journey-content,#journey.map-expanded .train-tools{height:100%;margin:0;padding:0;border:0}
+#journey.map-expanded .train-location{display:flex;flex-direction:column;height:100%;gap:8px}
+#journey.map-expanded .train-location h3,#journey.map-expanded .train-location p{margin:0}
+#journey.map-expanded .train-map{flex:1;min-height:180px;height:auto}
+#journey .expand-map{align-self:flex-start}
