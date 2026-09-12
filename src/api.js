@@ -29,9 +29,9 @@ export function createMockBoard({ crs = 'BMV', type = 'departures', count = 6, s
   const station = stations.find(s => s.crs === crs);
   if (!station) throw new Error('Unsupported demo station');
   if (!['departures', 'arrivals'].includes(type)) throw new Error('Invalid board type');
-  if (![4, 6, 8, 10].includes(count)) throw new Error('Invalid service count');
+  if (![4, 6, 8, 10, 20, 30].includes(count)) throw new Error('Invalid service count');
   if (scenario === 'error') throw new Error('Demo API unavailable');
-  const services = scenario === 'empty' ? [] : routes.slice(0, count).map(([end, status, platform, stops], i) => {
+  const services = scenario === 'empty' ? [] : Array.from({length:count}, (_, i) => routes[i % routes.length]).map(([end, status, platform, stops], i) => {
     const time = offset => clock(new Date(now.getTime() + offset * 60000));
     const offset = 5 + i * 10;
     const delay = status === 'delayed' ? (i === 2 ? 3 : 8) : 0;

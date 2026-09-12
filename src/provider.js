@@ -51,7 +51,7 @@ export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
     pending.set(path,promise); return promise;
   }
   async function board(type, { crs,count }) {
-    if (!/^[A-Z]{3}$/.test(crs) || ![4,6,8,10].includes(count)) throw new Error('Invalid board options');
+    if (!/^[A-Z]{3}$/.test(crs) || ![4,6,8,10,20,30].includes(count)) throw new Error('Invalid board options');
     const result = normalizeBoard(await get(`/boards/${crs}/${type}?limit=${count}`),type,count);
     if (result.station.crs !== crs) throw new Error('Station mismatch');
     return result;

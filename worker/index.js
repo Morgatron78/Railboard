@@ -31,7 +31,7 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
     for(const [key,value] of Object.entries({crs,dep,date})) upstream.searchParams.set(key,value);
   } else if(board) {
     const limit=url.searchParams.get('limit') || '6';
-    if(!['4','6','8','10'].includes(limit) || [...url.searchParams.keys()].some(k=>k!=='limit')) return respond({error:'Invalid parameters'},400);
+    if(!['4','6','8','10','20','30'].includes(limit) || [...url.searchParams.keys()].some(k=>k!=='limit')) return respond({error:'Invalid parameters'},400);
     upstream.pathname=url.pathname;upstream.searchParams.set('limit',limit);
   } else if(url.pathname==='/stations') {
     const q=(url.searchParams.get('q')||'').trim();

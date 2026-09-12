@@ -5,7 +5,7 @@ export function validateSettings(value = {}) {
   return { ...defaults, crs: station.crs, stationName: station.name,
     theme: ['retro', 'modern', 'midnight'].includes(value?.theme) ? value.theme : defaults.theme,
     board: ['departures', 'arrivals'].includes(value?.board) ? value.board : defaults.board,
-    count: [4, 6, 8, 10].includes(value?.count) ? value.count : defaults.count,
+    count: [4, 6, 8, 10, 20, 30].includes(value?.count) ? value.count : defaults.count,
     favourite: typeof value?.favourite === 'string' ? value.favourite.slice(0, 100) : '',
     ...Object.fromEntries(['autoRefresh', 'cacheBoard', 'onboarded'].map(key => [key, typeof value?.[key] === 'boolean' ? value[key] : defaults[key]])) };
 }
