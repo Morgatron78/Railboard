@@ -24,6 +24,15 @@ export function normalizeBoard(raw, type, count, now = new Date()) {
         day: Number.isInteger(s.day) ? s.day : 0, serviceDate: clean(raw.date), stopCount: Number.isInteger(s.stops) ? s.stops : null };
     }) };
 }
+export function normalizeJourneys(raw, from, to) {
+  if(raw?.from?.crs !== from || raw?.to?.crs !== to || !Array.isArray(raw.journeys) || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date)) throw new Error('Invalid journey response');
+  return {date:raw.date, receivedAt:new Date().toISOString(), journeys:raw.journeys.slice(0,6).map(j => {
+    const leg = j.legs?.[0];
+    if(j.changes !== 0 || j.legs?.length !== 1 || leg.from_crs !== from || leg.to_crs !== to || !clockValue(j.dep) || !clockValue(j.arr) || !Number.isFinite(j.duration_min) || j.duration_min < 0) throw new Error('Invalid direct journey');
+    const status = [j.status,leg.status].includes('cancelled') ? 'cancelled' : [j.status,leg.status].includes('late') ? 'delayed' : j.status === 'on_time' ? 'on-time' : 'unknown';
+    return {departure:clockValue(j.dep),arrival:clockValue(j.arr),duration:j.duration_min,platform:clean(leg.dep_platform),operator:clean(leg.atoc_code),status};
+  })};
+}
 export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
   const pending = new Map(); let retryAt = 0;
   function get(path) {
@@ -48,6 +57,10 @@ export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
     return result;
   }
   return { mock:false, getDepartures: o => board('departures',o), getArrivals: o => board('arrivals',o),
+    async getJourneys({from,to}) {
+      if(!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to) || from === to) throw new Error('Choose a different destination');
+      return normalizeJourneys(await get(`/journeys?from=${from}&to=${to}`),from,to);
+    },
     async getServiceDetails({crs, service}) {
       if(!/^[A-Z]{3}$/.test(crs) || !clockValue(service.scheduled) || !/^\d{4}-\d{2}-\d{2}$/.test(service.serviceDate)) throw new Error('Invalid service lookup');
       const date = new Date(`${service.serviceDate}T12:00:00Z`);

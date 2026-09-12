@@ -53,6 +53,16 @@ export function createMockBoard({ crs = 'BMV', type = 'departures', count = 6, s
 }
 export const mockProvider = {
   searchStations,
+  async getJourneys({from,to}) {
+    const destination = stations.find(s => s.crs === to);
+    if(!destination || from === to) throw new Error('Invalid demo destination');
+    const board = createMockBoard({crs:from,count:10});
+    const minutes = time => Number(time.slice(0,2))*60+Number(time.slice(3));
+    return {date:new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/London'}).format(new Date()),receivedAt:board.generatedAt,journeys:board.services.flatMap(s => {
+      const point = s.callingPoints.find(p => p.name === destination.name);
+      return point ? [{departure:s.scheduled,arrival:point.scheduled,duration:(minutes(point.scheduled)-minutes(s.scheduled)+1440)%1440,platform:s.platform,operator:s.operator,status:s.status}] : [];
+    }).slice(0,6)};
+  },
   async getDepartures(options) { return createMockBoard({ ...options, type: 'departures' }); },
   async getArrivals(options) { return createMockBoard({ ...options, type: 'arrivals' }); },
   async getServiceDetails(service) { return service; }

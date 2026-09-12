@@ -13,6 +13,7 @@ Railboard 1.0 is a lightweight, mobile-first UK railway departure and arrival bo
 - Original SVG dot-matrix lettering on the Retro board.
 - Searchable home station and optional favourite destination.
 - Tap the station name to search or switch between your three most recent stations.
+- Choose **Next trains to a destination** from the station menu for up to six direct journeys, with scheduled departure/arrival times, duration, platform and available live status.
 - Service details with calling points, available predictions, passed-stop indicators and a highlighted favourite-stop summary.
 - Follow a train to refresh its calling points every 30 seconds while details are open and visible.
 - Open an estimated-position map from live service details when a unique, fresh service match is available.
@@ -106,3 +107,5 @@ Run `npm test` before publishing. The suite covers provider mapping, arrivals, d
 Also check the installed iPhone app after visual changes, especially safe-area rendering, station suggestions, theme switching, service details and recovery after going offline.
 
 Train maps load OpenStreetMap only when requested. Positions are estimates, not GPS. Ambiguous, stale and unsupported overnight matches show an unavailable message; the app does not guess a train from its destination. Following retains previous calling points with a warning if refreshing fails, and stops when the detail sheet closes.
+
+Destination journeys use the same railinfo provider through a validated proxy route. Results refresh on request and keep scheduled times distinct from live status; no arrival prediction is inferred from a delay label.

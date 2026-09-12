@@ -37,3 +37,15 @@ test('service lookup uses the service date and validates and normalises calling 
  const unavailable=createLiveProvider('https://example.test',async()=>new Response('',{status:502}));
  await assert.rejects(unavailable.getServiceDetails({crs:'BMV',service}),/502/);
 });
+
+test('direct journeys validate routing and preserve scheduled times without inventing predictions',async()=>{
+ const {normalizeJourneys}=await import('../src/provider.js');
+ const raw={from:{crs:'BMV'},to:{crs:'BHM'},date:'2026-09-12',journeys:[{changes:0,dep:'2350',arr:'0020',duration_min:30,status:'on_time',legs:[{from_crs:'BMV',to_crs:'BHM',dep_platform:'2',status:'late'}]}]};
+ const result=normalizeJourneys(raw,'BMV','BHM').journeys[0];assert.equal(result.arrival,'00:20');assert.equal(result.status,'delayed');assert.equal(result.expected,undefined);
+ assert.equal(normalizeJourneys({...raw,journeys:[]},'BMV','BHM').journeys.length,0);
+ assert.throws(()=>normalizeJourneys(raw,'BMV','RDG'));
+ assert.throws(()=>normalizeJourneys({...raw,journeys:[{...raw.journeys[0],changes:1}]},'BMV','BHM'));
+ let url;const provider=createLiveProvider('https://example.test',async u=>{url=u;return Response.json(raw)});
+ await provider.getJourneys({from:'BMV',to:'BHM'});assert.equal(url,'https://example.test/journeys?from=BMV&to=BHM');
+ await assert.rejects(provider.getJourneys({from:'BMV',to:'BMV'}));
+});

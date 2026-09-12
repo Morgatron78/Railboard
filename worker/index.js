@@ -15,7 +15,13 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
   const board = /^\/boards\/([A-Z]{3})\/(departures|arrivals)$/.test(url.pathname);
   const detail = url.pathname === '/services/lookup';
   const map = url.pathname === '/map/trains';
-  if(map) {
+  const journeys = url.pathname === '/journeys';
+  if(journeys) {
+    const from = url.searchParams.get('from'), to = url.searchParams.get('to');
+    if(!/^[A-Z]{3}$/.test(from || '') || !/^[A-Z]{3}$/.test(to || '') || from === to || [...url.searchParams.keys()].some(k=>!['from','to'].includes(k))) return respond({error:'Invalid journey query'},400);
+    upstream.pathname='/journeys';
+    for(const [key,value] of Object.entries({from,to,direct:'true',limit:'6'})) upstream.searchParams.set(key,value);
+  } else if(map) {
     if([...url.searchParams].length) return respond({error:'Invalid map query'},400);
     upstream.pathname = '/map/trains';
   } else if(detail) {
@@ -45,8 +51,8 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
     }
     if(!result.ok) { console.warn('Upstream HTTP status',result.status); return respond({error:'Rail information temporarily unavailable'},502); }
     const data=await result.json();
-    if(map ? !Array.isArray(data?.trains) || !Number.isFinite(Date.parse(data.generated_at)) : detail ? !Array.isArray(data?.calls) : board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
-    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${map?30:board || detail?20:300}`}})).catch(()=>{}));
+    if(journeys ? !Array.isArray(data?.journeys) : map ? !Array.isArray(data?.trains) || !Number.isFinite(Date.parse(data.generated_at)) : detail ? !Array.isArray(data?.calls) : board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
+    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${map?30:board || detail || journeys?20:300}`}})).catch(()=>{}));
     return respond(data);
   } catch (error) { console.warn('Proxy request failed',error.name,error.message); return respond({error:'Rail information temporarily unavailable'},502); }
 }

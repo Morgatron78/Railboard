@@ -41,3 +41,9 @@ test('map route rejects query injection and malformed feeds',async()=>{
  assert.equal((await handleRequest(req(path+'?url=bad'),env,{}, {fetch:()=>assert.fail()})).status,400);
  assert.equal((await handleRequest(req(path),env,{}, {fetch:async()=>Response.json({trains:[]})})).status,502);
 });
+
+test('journey proxy fixes direct mode and limits while rejecting unsafe parameters',async()=>{
+ const path='/journeys?from=BMV&to=BHM';
+ const result=await handleRequest(req(path),env,{}, {fetch:async url=>{assert.equal(url.searchParams.get('direct'),'true');assert.equal(url.searchParams.get('limit'),'6');return Response.json({journeys:[]})}});assert.equal(result.status,200);
+ for(const query of [path+'&direct=false',path.replace('BHM','BMV'),path+'&url=https://bad.test']) assert.equal((await handleRequest(req(query),env,{}, {fetch:()=>assert.fail()})).status,400);
+});

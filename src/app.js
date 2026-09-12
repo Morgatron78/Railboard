@@ -162,6 +162,41 @@ async function switchStation(station) {
   if(!saved) setUpdateStatus($('update-status').textContent + ' · Station could not be saved on this device');
 }
 const quickPicker = stationPicker('quick-station-search','quick-suggestions','quick-help',switchStation);
+let destinationRevision = 0, destinationStation = null, journeyOrigin = null;
+async function loadDestinationJourneys(station) {
+  const revision = ++destinationRevision;
+  destinationStation = station;
+  $('destination-results').replaceChildren();
+  $('refresh-journeys').hidden = false;
+  $('refresh-journeys').disabled = true;
+  $('journey-search-status').textContent = 'Finding direct trains…';
+  try {
+    if(station.crs === journeyOrigin.crs) throw new Error('same-station');
+    const result = await api.getJourneys({from:journeyOrigin.crs,to:station.crs});
+    if(revision !== destinationRevision || !$('destination-journeys').open) return;
+    $('journey-search-status').textContent = `${api.mock ? 'Demo · Not for travel · ' : ''}Direct trains · ${result.date} · Updated ${time(result.receivedAt)}`;
+    $('destination-results').innerHTML = result.journeys.length ? `<p class="hint">Scheduled departure and arrival times. Live status is shown where supplied.</p><table class="destination-table"><caption>${escape(journeyOrigin.name)} to ${escape(station.name)}</caption><thead><tr><th>Departs</th><th>Arrives</th><th>Platform</th></tr></thead><tbody>${result.journeys.map(j => `<tr><td><strong>${escape(j.departure)}</strong></td><td>${escape(j.arrival)}${j.arrival < j.departure ? '<small>Next day</small>' : ''}</td><td>${escape(j.platform || '—')}</td></tr><tr class="journey-secondary"><td colspan="3"><span class="status ${escape(j.status)}">${escape(statusText({status:j.status}))}</span> · ${j.duration} min${j.operator ? ` · ${escape(j.operator)}` : ''}</td></tr>`).join('')}</tbody></table>` : '<p>No direct trains found in the current search. Try another destination or refresh later.</p>';
+  } catch(error) {
+    if(revision === destinationRevision) $('journey-search-status').textContent = error.message === 'same-station' ? 'Choose a destination different from your starting station.' : 'Journey information temporarily unavailable. Please try refreshing.';
+  } finally { if(revision === destinationRevision) $('refresh-journeys').disabled = false; }
+}
+const destinationPicker = stationPicker('destination-search','destination-suggestions','destination-help',loadDestinationJourneys);
+$('next-trains-button').addEventListener('click', () => {
+  $('station-switcher').close(); ++destinationRevision;
+  journeyOrigin = {crs:settings.crs,name:settings.stationName}; destinationStation = null;
+  destinationPicker.reset();
+  $('journey-origin').textContent = `From ${journeyOrigin.name} — ${journeyOrigin.crs}`;
+  $('destination-results').replaceChildren(); $('journey-search-status').textContent = '';
+  $('refresh-journeys').hidden = true;
+  $('destination-journeys').showModal();
+  if(settings.favourite) { $('destination-search').value = settings.favourite; $('destination-search').dispatchEvent(new Event('input')); }
+});
+$('destination-search').addEventListener('input', () => {
+  if(!destinationPicker.selected()) { ++destinationRevision; destinationStation = null; $('destination-results').replaceChildren(); $('journey-search-status').textContent = ''; $('refresh-journeys').hidden = true; }
+});
+$('refresh-journeys').addEventListener('click', () => { if(destinationStation) loadDestinationJourneys(destinationStation); });
+$('close-destination-journeys').addEventListener('click', () => $('destination-journeys').close());
+$('destination-journeys').addEventListener('close', () => { ++destinationRevision; destinationPicker.reset(); });
 $('station-name').addEventListener('click', () => {
   quickPicker.reset();
   $('recent-stations').innerHTML = recent.map((s,i) => `<button type="button" data-recent="${i}" ${s.crs === settings.crs ? 'aria-current="true"' : ''}>${escape(s.name)} <span>${escape(s.crs)}${s.crs === settings.crs ? ' · Current' : ''}</span></button>`).join('');
