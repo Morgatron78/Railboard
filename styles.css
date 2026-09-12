@@ -411,3 +411,8 @@ body[data-theme=retro] #board-state .led-text{display:inline-flex;align-items:ce
 /* Keep close-button focus inside the sign rather than adding an outer frame. */
 #preferences #close-preferences:focus{outline:none}
 #preferences #close-preferences:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--br-blue);background:#e1e7ed}
+
+/* Plain-text themes share a text baseline; the LED theme keeps its flex centring. */
+body:not([data-theme=retro]) #board-state{display:block;line-height:inherit}
+body:not([data-theme=retro]) #board-state:before{margin-right:5px;vertical-align:.12em}
+body:not([data-theme=retro]) #update-status{line-height:inherit}
