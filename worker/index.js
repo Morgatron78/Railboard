@@ -14,7 +14,11 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
   const upstream = new URL(UPSTREAM);
   const board = /^\/boards\/([A-Z]{3})\/(departures|arrivals)$/.test(url.pathname);
   const detail = url.pathname === '/services/lookup';
-  if(detail) {
+  const map = url.pathname === '/map/trains';
+  if(map) {
+    if([...url.searchParams].length) return respond({error:'Invalid map query'},400);
+    upstream.pathname = '/map/trains';
+  } else if(detail) {
     const { crs, dep, date } = Object.fromEntries(url.searchParams);
     if(!/^[A-Z]{3}$/.test(crs || '') || !/^([01]\d|2[0-3])[0-5]\d$/.test(dep || '') || !/^\d{4}-\d{2}-\d{2}$/.test(date || '') || [...url.searchParams.keys()].some(k=>!['crs','dep','date'].includes(k))) return respond({error:'Invalid service query'},400);
     upstream.pathname=url.pathname;
@@ -41,8 +45,8 @@ export async function handleRequest(request, env = {}, ctx = {}, deps = {}) {
     }
     if(!result.ok) { console.warn('Upstream HTTP status',result.status); return respond({error:'Rail information temporarily unavailable'},502); }
     const data=await result.json();
-    if(detail ? !Array.isArray(data?.calls) : board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
-    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${board || detail?20:300}`}})).catch(()=>{}));
+    if(map ? !Array.isArray(data?.trains) || !Number.isFinite(Date.parse(data.generated_at)) : detail ? !Array.isArray(data?.calls) : board ? !Array.isArray(data?.departures) : !Array.isArray(data)) return respond({error:'Invalid upstream response'},502);
+    if(cache) ctx.waitUntil(cache.put(key,Response.json(data,{headers:{'Cache-Control':`public, max-age=${map?30:board || detail?20:300}`}})).catch(()=>{}));
     return respond(data);
   } catch (error) { console.warn('Proxy request failed',error.name,error.message); return respond({error:'Rail information temporarily unavailable'},502); }
 }

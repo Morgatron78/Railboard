@@ -1,5 +1,6 @@
 import { mockProvider } from './api.js';
 import { API_BASE_URL } from './config.js';
+import { matchTrainPosition } from './tracking.js';
 const clean = v => typeof v === 'string' ? v : '';
 export function clockValue(value) {
   const s = clean(value).replace(':', '');
@@ -56,8 +57,11 @@ export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
       if(!Array.isArray(raw?.calls) || !raw.calls.some(p => p.crs === crs)) throw new Error('Service route unavailable');
       return raw.calls.map(p => {
         if(!clean(p.name) || !clockValue(p.scheduled)) throw new Error('Invalid calling point');
-        return {name:p.name, scheduled:clockValue(p.scheduled), expected:clockValue(p.expected), status:clean(p.status), passed:p.passed === true, here:p.here === true};
+        return {name:p.name, crs:clean(p.crs), scheduled:clockValue(p.scheduled), expected:clockValue(p.expected), status:raw.cancelled ? 'cancelled' : clean(p.status), passed:p.passed === true, here:p.here === true};
       });
+    },
+    async getTrainPosition({service, points}) {
+      return matchTrainPosition(await get('/map/trains'), service, points);
     },
     async searchStations(query) {
       if (!query.trim()) return [];

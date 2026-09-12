@@ -14,6 +14,8 @@ Railboard 1.0 is a lightweight, mobile-first UK railway departure and arrival bo
 - Searchable home station and optional favourite destination.
 - Tap the station name to search or switch between your three most recent stations.
 - Service details with calling points, available predictions, passed-stop indicators and a highlighted favourite-stop summary.
+- Follow a train to refresh its calling points every 30 seconds while details are open and visible.
+- Open an estimated-position map from live service details when a unique, fresh service match is available.
 - Configurable default board, service count, automatic refresh and saved-board caching.
 - Automatic refresh every 30 seconds while visible, with stale-data refresh when returning to the app.
 - Offline application shell and clearly labelled saved boards when live information is unavailable.
@@ -54,7 +56,7 @@ Railboard PWA → Cloudflare Worker → api.railinfo.uk
 
 No rail-data API key is embedded in the app or required by the current provider. Cloudflare deployment requires your own account.
 
-The Worker permits only validated station searches, departure/arrival boards and service lookups. It uses a fixed upstream, does not follow redirects, allows configured browser origins, caches boards and service details for 20 seconds, and station searches for five minutes. Rate-limit responses retain `Retry-After`.
+The Worker permits only validated station searches, departure/arrival boards service lookups and the train-position feed. It uses a fixed upstream, does not follow redirects, allows configured browser origins, caches boards and service details for 20 seconds, and station searches for five minutes. Rate-limit responses retain `Retry-After`.
 
 The provider adapter normalises upstream fields before the UI consumes them. Board update times indicate receipt time. Calling points are requested on demand from `/services/lookup` using the station, scheduled time and service date; failures show an unavailable message rather than an invented route. Predictions and other fields are shown only when supplied.
 
@@ -102,3 +104,5 @@ CORS is not authentication: the proxy is public. Monitor usage and respect upstr
 Run `npm test` before publishing. The suite covers provider mapping, arrivals, disruption states, station persistence, request deduplication, rate limiting, calling-point lookup, proxy validation, LED symbols and offline-shell assets.
 
 Also check the installed iPhone app after visual changes, especially safe-area rendering, station suggestions, theme switching, service details and recovery after going offline.
+
+Train maps load OpenStreetMap only when requested. Positions are estimates, not GPS. Ambiguous, stale and unsupported overnight matches show an unavailable message; the app does not guess a train from its destination. Following retains previous calling points with a warning if refreshing fails, and stops when the detail sheet closes.

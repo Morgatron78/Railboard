@@ -469,3 +469,11 @@ body:not([data-theme=retro]) #board-state:not(:empty):after{content:' · ';white
 #journey .timeline small{font-size:11px;margin-top:3px}
 #journey .favourite-stop{margin:10px 0;padding:8px 0}
 #journey .favourite-stop p{font-size:14px}
+
+#journey .train-tools{margin:10px 0;border-block:1px solid var(--line);padding:8px 0}
+#journey .train-tool-buttons{display:flex;flex-wrap:wrap;gap:8px}
+#journey .train-tool-buttons button{border:1px solid var(--accent);padding:7px 10px;font-size:13px;min-height:40px;color:var(--accent)}
+#journey .train-tool-buttons button[aria-pressed=true]{background:var(--br-blue);color:white}
+#journey .detail-updated{font-size:11px;color:var(--muted);margin:8px 0 0;line-height:1.4}
+#journey .train-location p{font-size:13px;line-height:1.4}
+#journey .train-location iframe{display:block;width:100%;height:230px;border:1px solid var(--line)}

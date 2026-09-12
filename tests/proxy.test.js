@@ -33,3 +33,11 @@ test('service proxy allows only validated lookups and rejects malformed routes',
  for(const bad of [path+'&url=x',path.replace('1742','2960'),path.replace('BMV','../')]) assert.equal((await handleRequest(req(bad),env,{}, {fetch:()=>assert.fail('invalid query reached upstream')})).status,400);
  assert.equal((await handleRequest(req(path),env,{}, {fetch:async()=>Response.json({})})).status,502);
 });
+
+test('map route rejects query injection and malformed feeds',async()=>{
+ const path='/map/trains';
+ const good=await handleRequest(req(path),env,{}, {fetch:async url=>{assert.equal(url.origin,'https://api.railinfo.uk');assert.equal(url.pathname,path);return Response.json({generated_at:'2026-09-12T12:00:00Z',trains:[]})}});
+ assert.equal(good.status,200);
+ assert.equal((await handleRequest(req(path+'?url=bad'),env,{}, {fetch:()=>assert.fail()})).status,400);
+ assert.equal((await handleRequest(req(path),env,{}, {fetch:async()=>Response.json({trains:[]})})).status,502);
+});
