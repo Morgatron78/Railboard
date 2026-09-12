@@ -501,3 +501,8 @@ body:not([data-theme=retro]) #board-state:not(:empty):after{content:' · ';white
 #destination-journeys .status{font-size:12px;color:#16833b}
 #destination-journeys .status.delayed,#destination-journeys .status.unknown{color:#925000}
 #destination-journeys .status.cancelled{color:#c9232c}
+#app-update{font:inherit;font-size:12px;color:var(--accent);border:1px solid currentColor;padding:8px 12px;min-height:44px;margin-top:8px}
+#journey .train-tool-buttons button{min-height:44px}
+.detail-meta dd,.timeline li span:last-child{overflow-wrap:anywhere;min-width:0}
+
+#journey .train-tool-buttons button{min-height:44px}

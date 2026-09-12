@@ -1,6 +1,7 @@
 import { statusText } from './api.js';
-import { favouriteStop } from './detail.js';
+import { favouriteStop, journeyProgress } from './detail.js';
 import { createFollower } from './tracking.js';
+import { watchUpdates } from './updates.js';
 import { api } from './provider.js';
 import { paintLED, led } from './led.js';
 import { read, write, clearBoard, validateSettings, matchingCache, recentStations } from './storage.js';
@@ -107,6 +108,19 @@ function stationPicker(inputId, listId, helpId, select) {
   let matches = [], revision = 0, timer;
   const label = s => `${s.name} — ${s.crs}`;
   const selected = () => matches.find(s => label(s) === input.value);
+  input.addEventListener('keydown', event => {
+    if(event.key === 'ArrowDown' && !list.hidden) { event.preventDefault(); list.querySelector('button')?.focus(); }
+    if(event.key === 'Escape' && !list.hidden) { event.preventDefault(); event.stopPropagation(); list.hidden = true; }
+  });
+  list.addEventListener('keydown', event => {
+    const buttons = [...list.querySelectorAll('button')];
+    const index = buttons.indexOf(document.activeElement);
+    if(event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); list.hidden = true; input.focus(); }
+    if(event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault(); const next = index + (event.key === 'ArrowDown' ? 1 : -1);
+      if(next < 0) input.focus(); else buttons[Math.min(next,buttons.length-1)]?.focus();
+    }
+  });
   list.addEventListener('click', event => {
     const button = event.target.closest('[data-station]');
     if(!button) return;
@@ -268,7 +282,7 @@ $('services').addEventListener('click', async event => {
   const fields = { From: service.origin, To: service.destination, Scheduled: service.scheduled, Expected: service.status === 'cancelled' ? 'Cancelled' : service.expected || 'Unconfirmed', Platform: service.transport === 'bus' ? 'Replacement bus' : `${service.platform || 'Unassigned'}${service.platformChanged ? ' (changed)' : ''}`, Operator: service.operator };
   const groups = service.callingGroups?.length ? service.callingGroups : [{ points: service.callingPoints }];
   const timeline = groups.map(group => `${groups.length > 1 ? `<h4>${escape(group.label)}</h4>` : ''}<ol class="timeline">${group.points.map(point => `<li><span>${escape(point.scheduled)}</span><span>${escape(point.name)}${point.status === 'cancelled' || service.status === 'cancelled' ? '<small>Cancelled</small>' : point.actual ? `<small>Actual ${escape(point.actual)}</small>` : point.expected && point.expected !== point.scheduled ? `<small>Expected ${escape(point.expected)}</small>` : ''}</span></li>`).join('')}</ol>`).join('');
-  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<div id="live-calling-points" role="status">Loading calling points…</div>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Board received ${time(board.generatedAt)}`}</p>`;
+  $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<div id="live-calling-points" role="status">Loading calling points…</div>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Platform and operator from board received ${time(board.generatedAt)}`}</p>`;
   $('journey').showModal();
   const summary = document.createElement('div');
   summary.className = 'favourite-summary';
@@ -334,7 +348,15 @@ $('services').addEventListener('click', async event => {
       }
       target.innerHTML = points.length ? `<ol class="timeline">${points.map(p => `<li class="${p.here ? 'current-call' : p.passed ? 'passed-call' : ''}"><span>${escape(p.scheduled)}</span><span>${escape(p.name)}${p.here ? '<small>Selected station</small>' : ''}${p.status === 'cancelled' ? '<small>Cancelled</small>' : p.expected && p.expected !== p.scheduled ? `<small>Expected ${escape(p.expected)}</small>` : ''}${p.passed ? '<small>Passed</small>' : ''}</span></li>`).join('')}</ol>` : 'No calling points available for this service.';
       showFavourite(points);
-      updateLabel.textContent = `Calling points updated ${time(new Date())}${followButton.getAttribute('aria-pressed') === 'true' ? ' · Following every 30s while visible' : ''}`;
+      const progress = journeyProgress(points);
+      if(progress) $('journey-content').querySelector(':scope > .status').textContent = progress;
+      if(progress === 'Journey complete') {
+        follower.stop(); followButton.setAttribute('aria-pressed','false');
+        followButton.textContent = 'Journey complete'; followButton.disabled = true;
+        locateButton.disabled = true; locationPanel.hidden = true;
+        locateButton.setAttribute('aria-expanded','false'); ++locationRevision;
+      }
+      updateLabel.textContent = `Calling points received ${time(new Date())}${followButton.getAttribute('aria-pressed') === 'true' ? ' · Following every 30s while visible' : ''}`;
       if(!locationPanel.hidden) await locate();
     } catch {
       if(!active()) return;
@@ -380,4 +402,6 @@ window.addEventListener('offline', () => { if (board) renderBoard(true); });
 applySettings();
 openBoard();
 if (!settings.onboarded) openPreferences();
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { $('refresh-status').hidden = false; $('refresh-status').textContent = 'Offline shell unavailable'; });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js', {updateViaCache:'none'})
+  .then(registration => watchUpdates(registration, {button:$('app-update')}))
+  .catch(() => { $('refresh-status').hidden = false; $('refresh-status').textContent = 'Offline shell unavailable'; });

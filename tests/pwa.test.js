@@ -7,6 +7,7 @@ test('service worker precaches existing project-relative shell and serves offlin
   const handlers = {};
   const entries = new Map();
   const scope = 'https://example.test/Railboard/';
+  let activations = 0;
   const cache = {
     async addAll(assets) {
       for (const asset of assets) {
@@ -18,7 +19,7 @@ test('service worker precaches existing project-relative shell and serves offlin
   };
   const context = {
     URL,
-    self: { location: { origin: 'https://example.test' }, registration: { scope }, clients: { claim() {} }, addEventListener(name, handler) { handlers[name] = handler; } },
+    self: { location: { origin: 'https://example.test' }, registration: { scope }, skipWaiting() { activations++; return Promise.resolve(); }, clients: { claim() {} }, addEventListener(name, handler) { handlers[name] = handler; } },
     caches: { async open() { return cache; }, async keys() { return ['railboard-shell-v1', 'unrelated-cache']; }, async delete(key) { assert.ok(key.startsWith('railboard-shell-')); } },
     fetch() { throw new Error('Network offline'); }
   };
@@ -26,6 +27,12 @@ test('service worker precaches existing project-relative shell and serves offlin
   let pending;
   handlers.install({ waitUntil(value) { pending = value; } });
   await pending;
+  assert.equal(activations,0);
+  handlers.message({data:{type:'UNKNOWN'}});
+  assert.equal(activations,0);
+  handlers.message({data:{type:'ACTIVATE_UPDATE'},waitUntil(value){pending=value;}});
+  await pending;
+  assert.equal(activations,1);
   handlers.activate({ waitUntil(value) { pending = value; } });
   await pending;
   for (const [url, mode, asset] of [[`${scope}?demo=empty`, 'navigate', './'], [`${scope}src/app.js`, 'cors', './src/app.js']]) {

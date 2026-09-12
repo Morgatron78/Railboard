@@ -1,4 +1,10 @@
 const key = value => String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-GB');
+export function journeyProgress(points) {
+  if (!points.length) return '';
+  if (points.every(p => p.passed || p.status === 'departed')) return 'Journey complete';
+  if (points.some(p => p.here && (p.passed || p.status === 'departed'))) return 'Departed selected station';
+  return '';
+}
 export function favouriteStop(points, favourite, cancelled = false) {
   if (!key(favourite)) return null;
   const index = points.findIndex(point => key(point.name) === key(favourite));
