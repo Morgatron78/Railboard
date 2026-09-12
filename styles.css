@@ -531,8 +531,20 @@ body:not([data-theme=modern]) button#app-update.rail-sign-action{
  background:currentColor;
  clip-path:polygon(25% 4%,56% 4%,100% 50%,56% 96%,25% 96%,53% 64%,0 64%,0 36%,53% 36%);
 }
-#journey button.rail-sign-action[aria-pressed=true],
-#journey button.rail-sign-action[aria-expanded=true]{text-decoration:underline;text-decoration-color:var(--br-red);text-underline-offset:4px}
+#journey button.rail-sign-action{position:relative}
+#journey button.rail-sign-action[aria-pressed=true]:before,
+#journey button.rail-sign-action[aria-expanded=true]:before{
+ content:'';position:absolute;left:0;right:0;bottom:0;height:3px;
+ background:var(--br-red);pointer-events:none;
+}
 button.rail-sign-action:hover:not(:disabled){filter:brightness(1.08)}
 button.rail-sign-action:focus-visible{outline:2px solid var(--sign-background);outline-offset:2px}
 body #refresh{background:transparent;color:inherit;border:0;border-radius:0}
+/* Bring the indicator toward the label without shrinking its touch target. */
+.tabs button{position:relative}
+body[data-theme=retro] .tabs button[aria-pressed=true],
+body:not([data-theme=retro]) .tabs button[aria-pressed=true]{border-bottom-color:transparent}
+.tabs button[aria-pressed=true]:after{
+ content:'';position:absolute;left:0;right:0;bottom:7px;height:3px;background:var(--br-red);
+}
+body[data-theme=retro] .tabs button[aria-pressed=true]:after{background:var(--accent)}
