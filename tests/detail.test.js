@@ -1,6 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { favouriteStop } from '../src/detail.js';
+import { favouriteStop, detailStatus } from '../src/detail.js';
+
+test('calling-point predictions cannot reverse a cancellation', () => {
+  for(const status of ['on_time','late','departed',undefined]) {
+    assert.equal(detailStatus({status:'cancelled'},{status}), 'cancelled');
+  }
+  assert.equal(detailStatus({status:'on-time'},{status:'cancelled'}),'cancelled');
+  assert.equal(detailStatus({status:'delayed'},{status:'on_time'}),'on-time');
+  assert.equal(detailStatus({status:'on-time'},{status:'late'}),'delayed');
+  assert.equal(detailStatus({status:'cancelled'},null),'cancelled');
+});
 
 test('favourite stop matches a complete name and retains overnight predictions', () => {
   const points = [{name:'Birmingham New Street',scheduled:'23:58',expected:'00:04'}];

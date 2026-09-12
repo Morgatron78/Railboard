@@ -1,4 +1,10 @@
 const key = value => String(value || '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-GB');
+// A calling-point prediction is not evidence that a cancelled service is reinstated.
+export function detailStatus(service, call) {
+  if(service.status === 'cancelled' || call?.status === 'cancelled') return 'cancelled';
+  if(!call) return service.status;
+  return ({late:'delayed',early:'early',on_time:'on-time'})[call.status] || 'unknown';
+}
 export function journeyProgress(points) {
   if (!points.length) return '';
   if (points.every(p => p.passed || p.status === 'departed')) return 'Journey complete';

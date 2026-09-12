@@ -1,5 +1,5 @@
 import { statusText } from './api.js';
-import { favouriteStop, journeyProgress } from './detail.js';
+import { favouriteStop, journeyProgress, detailStatus } from './detail.js';
 import { createFollower } from './tracking.js';
 import { watchUpdates } from './updates.js';
 import { createTrainMap } from './map.js';
@@ -345,8 +345,8 @@ $('services').addEventListener('click', async event => {
       points = result;
       const selectedCall = points.find(p => p.here);
       if(selectedCall) {
-        const status = selectedCall.status === 'cancelled' ? 'cancelled' : selectedCall.status === 'late' ? 'delayed' : selectedCall.status === 'early' ? 'early' : selectedCall.status === 'on_time' ? 'on-time' : 'unknown';
-        service.status = status; service.expected = selectedCall.expected;
+        const status = detailStatus(service, selectedCall);
+        service.status = status; service.expected = status === 'cancelled' ? null : selectedCall.expected;
         service.delay = null;
         const statusLine = $('journey-content').querySelector(':scope > .status');
         statusLine.textContent = statusText(service); statusLine.className = `status ${status}`;
@@ -355,7 +355,7 @@ $('services').addEventListener('click', async event => {
       }
       target.innerHTML = points.length ? `<ol class="timeline">${points.map(p => `<li class="${p.here ? 'current-call' : p.passed ? 'passed-call' : ''}"><span>${escape(p.scheduled)}</span><span>${escape(p.name)}${p.here ? '<small>Selected station</small>' : ''}${p.status === 'cancelled' ? '<small>Cancelled</small>' : p.expected && p.expected !== p.scheduled ? `<small>Expected ${escape(p.expected)}</small>` : ''}${p.passed ? '<small>Passed</small>' : ''}</span></li>`).join('')}</ol>` : 'No calling points available for this service.';
       showFavourite(points);
-      const progress = journeyProgress(points);
+      const progress = service.status === 'cancelled' ? '' : journeyProgress(points);
       if(progress) $('journey-content').querySelector(':scope > .status').textContent = progress;
       if(progress === 'Journey complete') {
         follower.stop(); followButton.setAttribute('aria-pressed','false');
