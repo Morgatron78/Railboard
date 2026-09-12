@@ -1,7 +1,8 @@
 import { statusText } from './api.js';
+import { favouriteStop } from './detail.js';
 import { api } from './provider.js';
 import { paintLED, led } from './led.js';
-import { read, write, clearBoard, validateSettings, matchingCache } from './storage.js';
+import { read, write, clearBoard, validateSettings, matchingCache, recentStations } from './storage.js';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 let settings = validateSettings(read('settings'));
@@ -144,6 +145,32 @@ const homePicker = stationPicker('station-search', 'home-suggestions', 'station-
   $('station-select').innerHTML = `<option value="${escape(station.crs)}" data-name="${escape(station.name)}">${escape(station.name)}</option>`;
 });
 const favouritePicker = stationPicker('favourite', 'favourite-suggestions', 'favourite-help', () => {});
+let recent = recentStations({crs:settings.crs,name:settings.stationName}, read('recentStations'));
+function rememberStation() {
+  recent = recentStations({crs:settings.crs,name:settings.stationName}, recent);
+  write('recentStations', recent);
+}
+async function switchStation(station) {
+  $('station-switcher').close();
+  if (station.crs === settings.crs) return;
+  settings = validateSettings({...settings,crs:station.crs,stationName:station.name});
+  const saved = write('settings',settings);
+  rememberStation();
+  board = null; ++request; loading = false;
+  applySettings(); await openBoard();
+  if(!saved) setUpdateStatus($('update-status').textContent + ' · Station could not be saved on this device');
+}
+const quickPicker = stationPicker('quick-station-search','quick-suggestions','quick-help',switchStation);
+$('station-name').addEventListener('click', () => {
+  quickPicker.reset();
+  $('recent-stations').innerHTML = recent.map((s,i) => `<button type="button" data-recent="${i}" ${s.crs === settings.crs ? 'aria-current="true"' : ''}>${escape(s.name)} <span>${escape(s.crs)}${s.crs === settings.crs ? ' · Current' : ''}</span></button>`).join('');
+  $('station-switcher').showModal();
+});
+$('recent-stations').addEventListener('click', event => {
+  const button = event.target.closest('[data-recent]');
+  if(button) switchStation(recent[Number(button.dataset.recent)]);
+});
+$('close-station-switcher').addEventListener('click', () => $('station-switcher').close());
 function openPreferences() {
   const first = !settings.onboarded;
   $('preferences-title').textContent = first ? 'Welcome to Railboard' : 'Settings';
@@ -172,6 +199,7 @@ $('preferences-form').addEventListener('submit', event => {
   const previous = settings;
   settings = validateSettings({ crs: $('station-select').value, stationName: $('station-select').selectedOptions[0]?.dataset.name, theme: new FormData(event.target).get('theme'), board: $('default-board').value, count: Number($('service-count').value), favourite: $('favourite').value.trim(), autoRefresh: $('auto-refresh').checked, cacheBoard: $('cache-board').checked, onboarded: true });
   const saved = write('settings', settings);
+  rememberStation();
   if (!settings.cacheBoard) clearBoard();
   const changed = previous.crs !== settings.crs || previous.count !== settings.count || previous.board !== settings.board;
   if(changed) { boardType = settings.board; board = null; ++request; loading=false; }
@@ -189,18 +217,45 @@ $('services').addEventListener('click', async event => {
   const button = event.target.closest('[data-index]');
   if (!button || !board) return;
   const service = board.services[Number(button.dataset.index)];
+  const favourite = settings.favourite;
+  function renderFavourite(points) {
+    const stop = favouriteStop(points, favourite, service.status === 'cancelled');
+    if (!stop) return '';
+    if (!stop.found) return `<section class="favourite-stop"><h3>Your stop · ${escape(stop.name)}</h3><p>Not listed in the supplied calling points.</p></section>`;
+    const prediction = stop.state === 'Expected' ? `Expected ${escape(stop.expected)}` : escape(stop.state);
+    return `<section class="favourite-stop"><h3>☆ Your stop · ${escape(stop.name)}</h3><p><strong>Scheduled ${escape(stop.scheduled)}</strong> · ${prediction}</p><p class="hint">Times shown are the supplied calling-point times.</p></section>`;
+  }
   const fields = { From: service.origin, To: service.destination, Scheduled: service.scheduled, Expected: service.status === 'cancelled' ? 'Cancelled' : service.expected || 'Unconfirmed', Platform: service.transport === 'bus' ? 'Replacement bus' : `${service.platform || 'Unassigned'}${service.platformChanged ? ' (changed)' : ''}`, Operator: service.operator };
   const groups = service.callingGroups?.length ? service.callingGroups : [{ points: service.callingPoints }];
   const timeline = groups.map(group => `${groups.length > 1 ? `<h4>${escape(group.label)}</h4>` : ''}<ol class="timeline">${group.points.map(point => `<li><span>${escape(point.scheduled)}</span><span>${escape(point.name)}${point.status === 'cancelled' || service.status === 'cancelled' ? '<small>Cancelled</small>' : point.actual ? `<small>Actual ${escape(point.actual)}</small>` : point.expected && point.expected !== point.scheduled ? `<small>Expected ${escape(point.expected)}</small>` : ''}</span></li>`).join('')}</ol>`).join('');
   $('journey-content').innerHTML = `<h2 id="journey-title">${escape(service.scheduled)} to ${escape(service.destination)}</h2><p class="status ${escape(service.status)}">${escape(statusText(service))}</p><dl class="detail-meta">${Object.entries(fields).map(([key, value]) => `<div><dt>${key}</dt><dd>${escape(value)}</dd></div>`).join('')}</dl>${service.reason ? `<p class="reason">${escape(service.reason)}</p>` : ''}<h3>Calling points</h3>${groups.some(g => g.points.length) ? timeline : '<div id="live-calling-points" role="status">Loading calling points…</div>'}<p class="hint">${api.mock ? 'Illustrative route and times · Not for travel' : `Board received ${time(board.generatedAt)}`}</p>`;
   $('journey').showModal();
+  const summary = document.createElement('div');
+  summary.className = 'favourite-summary';
+  summary.setAttribute('role', 'status');
+  $('journey-content').querySelector('.detail-meta').before(summary);
+  if (favourite) summary.textContent = 'Checking your favourite stop…';
+  function showFavourite(points) {
+    summary.innerHTML = renderFavourite(points);
+    const wanted = favourite.trim().replace(/\s+/g,' ').toLowerCase();
+    $('journey-content').querySelectorAll('.timeline li').forEach((row, index) => {
+      if(wanted && points[index]?.name.trim().replace(/\s+/g,' ').toLowerCase() === wanted) {
+        row.classList.add('favourite-call');
+        const marker = document.createElement('small'); marker.textContent = '☆ Your stop';
+        row.lastElementChild.append(marker);
+      }
+    });
+  }
+  if (groups.some(g => g.points.length)) showFavourite(groups.flatMap(g => g.points));
   const target = $('live-calling-points');
   if(target && !api.mock) {
     try {
       const points = await api.getServiceDetails({crs:board.station.crs, service});
       if(!target.isConnected || !$('journey').open) return;
       target.innerHTML = points.length ? `<ol class="timeline">${points.map(p => `<li class="${p.here ? 'current-call' : p.passed ? 'passed-call' : ''}"><span>${escape(p.scheduled)}</span><span>${escape(p.name)}${p.here ? '<small>Selected station</small>' : ''}${p.status === 'cancelled' ? '<small>Cancelled</small>' : p.expected && p.expected !== p.scheduled ? `<small>Expected ${escape(p.expected)}</small>` : ''}${p.passed ? '<small>Passed</small>' : ''}</span></li>`).join('')}</ol>` : 'No calling points available for this service.';
+      showFavourite(points);
     } catch {
+      if(summary.isConnected && favourite) summary.textContent = 'Your stop information is unavailable until calling points can be loaded.';
       if(target.isConnected) target.textContent = 'Calling points temporarily unavailable. Close and reopen this service to try again.';
     }
   }

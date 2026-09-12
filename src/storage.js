@@ -10,6 +10,13 @@ export function validateSettings(value = {}) {
     ...Object.fromEntries(['autoRefresh', 'cacheBoard', 'onboarded'].map(key => [key, typeof value?.[key] === 'boolean' ? value[key] : defaults[key]])) };
 }
 export function read(key) { try { return JSON.parse(localStorage.getItem(`railboard:${key}`)); } catch { return null; } }
+export function recentStations(current, previous = []) {
+  const seen = new Set();
+  return [current, ...(Array.isArray(previous) ? previous : [])].filter(s => {
+    if (!s || !/^[A-Z]{3}$/.test(s.crs) || typeof s.name !== 'string' || !s.name.trim() || seen.has(s.crs)) return false;
+    seen.add(s.crs); return true;
+  }).slice(0,3).map(s => ({crs:s.crs,name:s.name.slice(0,100)}));
+}
 export function write(key, value) { try { localStorage.setItem(`railboard:${key}`, JSON.stringify(value)); return true; } catch { return false; } }
 export function clearBoard() { try { Object.keys(localStorage).filter(k => k.startsWith('railboard:board')).forEach(k => localStorage.removeItem(k)); } catch { /* Storage can be disabled. */ } }
 export function matchingCache(board, settings, type, mock = true) {

@@ -416,3 +416,56 @@ body[data-theme=retro] #board-state .led-text{display:inline-flex;align-items:ce
 body:not([data-theme=retro]) #board-state{display:block;line-height:inherit}
 body:not([data-theme=retro]) #board-state:before{margin-right:5px;vertical-align:.12em}
 body:not([data-theme=retro]) #update-status{line-height:inherit}
+
+/* Keep the plain-text footer on a single typographic baseline, including Safari. */
+body:not([data-theme=retro]) .board-footer{display:block;font:400 12px/1.3 'Helvetica Neue',Helvetica,Arial,sans-serif}
+body:not([data-theme=retro]) #board-state,
+body:not([data-theme=retro]) #update-status{display:inline;font:inherit;vertical-align:baseline;margin:0;padding:0}
+body:not([data-theme=retro]) #board-state:empty{display:none}
+body:not([data-theme=retro]) #board-state:not(:empty):after{content:' · ';white-space:pre}
+
+/* Favourite-stop detail, styled as a timetable annotation rather than a card. */
+#journey .favourite-stop{border-block:1px solid var(--line);padding:12px 0;margin:14px 0}
+#journey .favourite-stop h3{font-size:17px;margin:0 0 6px}
+#journey .favourite-stop p{margin:4px 0;font-size:15px;font-variant-numeric:tabular-nums}
+#journey .favourite-stop .hint{font-size:12px}
+#journey .favourite-summary:empty{display:none}
+#journey .favourite-call{font-weight:700}
+#journey .favourite-call:after{background:var(--accent)}
+
+/* Station title opens a small switcher without adding a board toolbar. */
+#station-name{font:inherit;letter-spacing:inherit;text-align:left;padding:0;color:inherit;min-height:0}
+#station-name:after{content:'⌄';font-size:.55em;margin-left:8px;vertical-align:middle}
+#station-switcher{padding:18px 20px max(16px,env(safe-area-inset-bottom));border-top-width:3px}
+#station-switcher .dialog-heading,#journey .dialog-heading{border-bottom-width:1px;padding-bottom:8px;margin-bottom:12px}
+#station-switcher h2,#journey .dialog-heading .eyebrow{font-size:26px;font-weight:700;letter-spacing:0;text-transform:none;line-height:1.2}
+#station-switcher h3{font-size:14px;margin:16px 0 6px}
+#station-switcher label{font-size:14px;margin:12px 0 6px}
+#station-switcher input{border:1px solid var(--br-blue);border-radius:0}
+#station-switcher .hint{font-size:11px;margin:4px 0}
+#station-switcher .hint:empty{display:none}
+#station-switcher .station-suggestions{max-height:180px;overflow:auto;border:1px solid var(--br-blue)}
+#station-switcher .station-suggestions button,#recent-stations button{display:block;width:100%;text-align:left;padding:10px 0;min-height:44px;border-bottom:1px solid var(--line);color:var(--br-blue);font-size:15px}
+#station-switcher .station-suggestions button{padding:10px}
+#recent-stations button span{display:block;font-size:11px;color:var(--muted)}
+#recent-stations button[aria-current=true]{font-weight:700}
+#station-switcher #close-station-switcher,#journey #close-journey{flex:0 0 32px;width:32px;height:32px;min-width:32px;min-height:32px;border:1px solid var(--accent);font-size:17px}
+#station-switcher #close-station-switcher:focus,#journey #close-journey:focus{outline:none}
+#station-switcher #close-station-switcher:focus-visible,#journey #close-journey:focus-visible{box-shadow:inset 0 0 0 1px var(--accent);background:var(--surface)}
+/* Increase the current Settings sign by twenty percent. */
+#settings-button .settings-sign{gap:5.88px;padding:5.04px 7.56px;font-size:14.28px;letter-spacing:-.336px}
+#settings-button svg{width:18.48px;height:16.8px}
+/* Service detail uses the same compact sheet proportions as Settings. */
+#journey,body[data-theme=retro] #journey{padding:18px 20px max(16px,env(safe-area-inset-bottom));border-top-width:3px}
+#journey #journey-title{font-size:23px;line-height:1.25;letter-spacing:0;margin:0 0 8px}
+#journey .status{font-size:14px;margin:6px 0 10px}
+#journey .detail-meta{gap:12px;padding:12px 0;margin:12px 0}
+#journey .detail-meta dt{font-size:11px;margin-bottom:4px}
+#journey .detail-meta dd{font-size:14px;overflow-wrap:break-word}
+#journey h3{font-size:16px;margin:12px 0 8px}
+#journey .hint,#journey .reason{font-size:12px;line-height:1.4}
+#journey .timeline{margin:14px 0}
+#journey .timeline li{font-size:14px;padding-bottom:18px}
+#journey .timeline small{font-size:11px;margin-top:3px}
+#journey .favourite-stop{margin:10px 0;padding:8px 0}
+#journey .favourite-stop p{font-size:14px}

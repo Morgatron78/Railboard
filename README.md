@@ -12,7 +12,8 @@ Railboard 1.0 is a lightweight, mobile-first UK railway departure and arrival bo
 - Three railway-inspired themes: Retro LED, Modern Rail and Midnight.
 - Original SVG dot-matrix lettering on the Retro board.
 - Searchable home station and optional favourite destination.
-- Service details with calling points, available predictions and passed-stop indicators.
+- Tap the station name to search or switch between your three most recent stations.
+- Service details with calling points, available predictions, passed-stop indicators and a highlighted favourite-stop summary.
 - Configurable default board, service count, automatic refresh and saved-board caching.
 - Automatic refresh every 30 seconds while visible, with stale-data refresh when returning to the app.
 - Offline application shell and clearly labelled saved boards when live information is unavailable.
