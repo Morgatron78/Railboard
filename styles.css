@@ -401,3 +401,13 @@ body[data-theme=retro] #update-status{--cell:8px;color:var(--led-amber);font-siz
 body[data-theme=retro] #settings-button .settings-sign{color:#131816}
 body[data-theme=retro] #settings-button svg{fill:#369dcc}
 #settings-button:hover .settings-sign{background:#fffdf7}
+
+/* Centre indicators on their visible artwork rather than font baselines. */
+#board-state{display:inline-flex;align-items:center;gap:5px}
+#board-state:before{flex:0 0 5px;margin-right:0}
+body[data-theme=retro] #board-state .led-text{display:inline-flex;align-items:center;line-height:1}
+#refresh svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* Keep close-button focus inside the sign rather than adding an outer frame. */
+#preferences #close-preferences:focus{outline:none}
+#preferences #close-preferences:focus-visible{outline:none;box-shadow:inset 0 0 0 1px var(--br-blue);background:#e1e7ed}
