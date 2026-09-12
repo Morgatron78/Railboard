@@ -393,11 +393,11 @@ body[data-theme=retro] #update-status{--cell:8px;color:var(--led-amber);font-siz
  color:var(--br-blue);letter-spacing:0;flex-shrink:0;
 }
 #settings-button .settings-sign{
- display:flex;align-items:center;gap:7px;padding:6px 9px;
+ display:flex;align-items:center;gap:4.9px;padding:4.2px 6.3px;
  background:var(--br-off-white);color:var(--br-blue);
- font:800 17px/1.15 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.4px;
+ font:800 11.9px/1.15 'Helvetica Neue',Helvetica,Arial,sans-serif;letter-spacing:-.28px;
 }
-#settings-button svg{display:block;width:22px;height:20px;fill:var(--br-blue);flex-shrink:0}
+#settings-button svg{display:block;width:15.4px;height:14px;fill:var(--br-blue);flex-shrink:0}
 body[data-theme=retro] #settings-button .settings-sign{color:#131816}
 body[data-theme=retro] #settings-button svg{fill:#369dcc}
 #settings-button:hover .settings-sign{background:#fffdf7}
