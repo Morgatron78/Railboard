@@ -3,7 +3,7 @@ export const defaults = { crs: 'BMV', stationName: 'Bromsgrove', theme: 'retro',
 export function validateSettings(value = {}) {
   const station = /^[A-Z]{3}$/.test(value?.crs) && typeof value?.stationName === 'string' && value.stationName.trim() ? { crs: value.crs, name: value.stationName.slice(0,100) } : stations.find(s => s.crs === value?.crs) || stations[0];
   return { ...defaults, crs: station.crs, stationName: station.name,
-    theme: ['retro', 'modern', 'midnight'].includes(value?.theme) ? value.theme : defaults.theme,
+    theme: ['retro', 'modern', 'midnight', 'system'].includes(value?.theme) ? value.theme : defaults.theme,
     board: ['departures', 'arrivals'].includes(value?.board) ? value.board : defaults.board,
     count: [4, 6, 8, 10, 20, 30].includes(value?.count) ? value.count : defaults.count,
     favourite: typeof value?.favourite === 'string' ? value.favourite.slice(0, 100) : '',

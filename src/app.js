@@ -25,13 +25,16 @@ function updateClock() {
 }
 setInterval(() => { if (!document.hidden) updateClock(); }, 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) updateClock(); });
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+const resolvedTheme = () => settings.theme === 'system' ? (systemDark.matches ? 'midnight' : 'modern') : settings.theme;
+systemDark.addEventListener('change', () => { if (settings.theme === 'system') applySettings(); });
 function applySettings() {
   document.querySelector('.note').hidden = !api.mock;
 
   $('attribution').innerHTML = api.mock ? 'Demo services · Not for travel' : 'Data via railinfo<span class="attribution-break"> · </span>Network Rail &amp; National Rail feeds';
   document.querySelector('#journey .eyebrow').textContent = api.mock ? 'Service details · Demo' : 'Service details';
-  document.body.dataset.theme = settings.theme;
-  document.querySelector('meta[name="theme-color"]').content = { retro: '#f2f0e8', modern: '#f2f0e8', midnight: '#f2f0e8' }[settings.theme];
+  document.body.dataset.theme = resolvedTheme();
+  document.querySelector('meta[name="theme-color"]').content = { retro: '#f2f0e8', modern: '#f2f0e8', midnight: '#f2f0e8' }[resolvedTheme()];
   $('station-name').textContent = settings.stationName;
   $('station-code').textContent = settings.crs;
   updateClock();
