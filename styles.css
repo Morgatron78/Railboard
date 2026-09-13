@@ -370,11 +370,12 @@ body[data-theme=retro] .board-footer{border-top:0}
 #preferences .theme-preview:has(:focus-visible){outline:2px solid var(--br-blue);outline-offset:2px}
 #preferences .sample{font-size:12px;margin:0 0 6px;padding:6px 0;border-top:5px solid var(--br-blue);border-bottom:1px solid currentColor;min-height:50px}
 #preferences .retro-preview .sample{--cell:4px;color:var(--led-amber)}
+#preferences .retro-preview .sample .led-text{line-height:1.5}
 #preferences .modern-preview{color:var(--br-blue)}
 #preferences .midnight-preview{color:#f4f6f8}
 #preferences .retro-preview{color:var(--led-amber)}
 #preferences .system-preview{color:var(--br-blue)}
-#preferences .system-preview .sample{padding:0;min-height:50px}
+#preferences .system-preview .sample{padding:0;min-height:54px}
 #preferences .system-half{display:flex;flex-direction:column;justify-content:center;padding:6px 2px;font-size:10px;white-space:nowrap}
 #preferences label[for=favourite]{font-weight:400}
 #preferences .toggle{margin:4px 0 0;padding:8px 0;gap:12px}
