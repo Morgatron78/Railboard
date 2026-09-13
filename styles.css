@@ -52,8 +52,8 @@ dialog::backdrop { backdrop-filter: none; }
 .station-heading { align-items: flex-start; }
 .station-heading>div { flex: 1; min-width: 0; }
 .station-meta {
-  display: grid;
-  grid-template-columns: auto 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px 16px;
   align-items: baseline;
   color: var(--text);
@@ -260,7 +260,7 @@ body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body
  body:not([data-theme=retro]) .station-heading{padding:18px 14px;gap:12px}
  body:not([data-theme=retro]) .station-heading>div{flex-basis:auto}
  body:not([data-theme=retro]) h1{font-size:27px}
- body:not([data-theme=retro]) .station-meta{display:flex;flex-wrap:wrap;font-size:13px}
+ body:not([data-theme=retro]) .station-meta{font-size:13px}
  dialog{padding:20px;max-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px)}
 }
 @media(max-width:380px){
