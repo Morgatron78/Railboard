@@ -251,11 +251,13 @@ dialog .hint,dialog .reason,.detail-meta dt,.timeline small{font-size:14px}
 .modern-preview{background:var(--br-off-white);color:var(--br-blue)}
 .midnight-preview{background:#090d11;color:#f4f6f8}
 .system-preview{background:var(--br-off-white);color:var(--br-blue)}
+.theme-preview span small{font-weight:400;font-size:11px;opacity:.7}
+.theme-preview span small:before{content:' · '}
 .theme-preview .sample{border-bottom:1px solid currentColor;padding-bottom:10px}
 .system-preview .sample{display:flex;gap:0;padding-bottom:0;border-bottom:0}
-.system-half{flex:1;padding-bottom:10px;border-bottom:1px solid currentColor}
+.system-half{flex:1;min-width:0;padding-bottom:10px;border-bottom:1px solid currentColor}
 .system-half-light{color:var(--br-blue)}
-.system-half-dark{background:#090d11;color:#f4f6f8;margin:-10px -8px -10px 0;padding:10px 8px 10px 6px}
+.system-half-dark{background:#090d11;color:#f4f6f8}
 body[data-theme=midnight] #journey{color-scheme:dark;--bg:#090d11;--surface:#121820;--text:#f4f6f8;--muted:#aab4be;--line:#26303a;--accent:#91bdea}
 body[data-theme=midnight] #journey h2,body[data-theme=midnight] #journey h3,body[data-theme=midnight] #journey .quiet{color:#f4f6f8}
 :focus-visible{outline:3px solid var(--br-red);outline-offset:3px}
@@ -373,7 +375,7 @@ body[data-theme=retro] .board-footer{border-top:0}
 #preferences .retro-preview{color:var(--led-amber)}
 #preferences .system-preview{color:var(--br-blue)}
 #preferences .system-preview .sample{padding:0;min-height:50px}
-#preferences .system-half{display:flex;flex-direction:column;justify-content:center;padding:6px 4px}
+#preferences .system-half{display:flex;flex-direction:column;justify-content:center;padding:6px 2px;font-size:10px;white-space:nowrap}
 #preferences label[for=favourite]{font-weight:400}
 #preferences .toggle{margin:4px 0 0;padding:8px 0;gap:12px}
 #preferences .toggle small{display:block;font-size:11px;font-weight:400;color:var(--muted);margin-top:3px}
