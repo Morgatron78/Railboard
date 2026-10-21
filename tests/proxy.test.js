@@ -22,7 +22,7 @@ test('proxy returns browser CORS headers and reuses successful cache',async()=>{
 });
 test('rate limits stay visible to browser and malformed upstream data fails',async()=>{
   const limited=await handleRequest(req(),env,{}, {fetch:async()=>new Response('',{status:429,headers:{'Retry-After':'120'}})});
-  assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'120');assert.equal(limited.headers.get('Access-Control-Expose-Headers'),'Retry-After');
+  assert.equal(limited.status,429);assert.equal(limited.headers.get('Retry-After'),'120');assert.equal(limited.headers.get('Access-Control-Expose-Headers'),'Retry-After, X-Railboard-Request-Id');
   const broken=await handleRequest(req(),env,{}, {fetch:async()=>Response.json({error:'bad'})});assert.equal(broken.status,502);
 });
 
@@ -46,4 +46,37 @@ test('journey proxy fixes direct mode and limits while rejecting unsafe paramete
  const path='/journeys?from=BMV&to=BHM';
  const result=await handleRequest(req(path),env,{}, {fetch:async url=>{assert.equal(url.searchParams.get('direct'),'true');assert.equal(url.searchParams.get('limit'),'6');return Response.json({journeys:[]})}});assert.equal(result.status,200);
  for(const query of [path+'&direct=false',path.replace('BHM','BMV'),path+'&url=https://bad.test']) assert.equal((await handleRequest(req(query),env,{}, {fetch:()=>assert.fail()})).status,400);
+});
+
+test('failures carry a specific code, a reference and a readable detail',async()=>{
+ const ref=/^RB-[A-Z2-9]{4}$/;
+ const run=async fetch=>{const r=await handleRequest(req(),env,{},{fetch});return [r,await r.json()]};
+ let [r,b]=await run(async()=>Response.json({error:'bad'}));
+ assert.equal(r.status,502);assert.equal(b.code,'UPSTREAM_SHAPE');assert.match(b.ref,ref);assert.equal(r.headers.get('X-Railboard-Request-Id'),b.ref);assert.match(b.detail,/departures/);
+ [r,b]=await run(async()=>new Response('',{status:503}));
+ assert.equal(b.code,'UPSTREAM_STATUS');assert.equal(b.upstreamStatus,503);
+ [r,b]=await run(async()=>new Response('<html>',{status:200}));
+ assert.equal(b.code,'UPSTREAM_SHAPE');
+ [r,b]=await run(async()=>{throw new DOMException('slow','TimeoutError')});
+ assert.equal(b.code,'UPSTREAM_TIMEOUT');
+ [r,b]=await run(async()=>{throw new TypeError('network')});
+ assert.equal(b.code,'UPSTREAM_UNREACHABLE');
+ [r,b]=await run(async()=>new Response('',{status:429}));
+ assert.equal(b.code,'RATE_LIMITED');
+ const bad=await handleRequest(req('/boards/BMV/departures?limit=999'),env,{},{fetch:()=>assert.fail()});
+ assert.equal((await bad.json()).code,'INVALID_QUERY');
+ const ids=new Set();for(let i=0;i<20;i++)ids.add((await handleRequest(req('/arbitrary'),env,{},{})).headers.get('X-Railboard-Request-Id'));assert.ok(ids.size>1);
+});
+
+test('health is cheap by default and probes the upstream feed on request',async()=>{
+ const plain=await handleRequest(req('/health'),env,{},{fetch:()=>assert.fail('plain health must not call upstream')});
+ assert.deepEqual(await plain.json(),{status:'ok',version:'1.2.0'});
+ const ok=await (await handleRequest(req('/health?deep=1'),env,{},{fetch:async url=>{assert.equal(url.origin,'https://api.railinfo.uk');return Response.json([{crs:'BMV'}])}})).json();
+ assert.equal(ok.status,'ok');assert.equal(ok.upstream.ok,true);assert.ok(Number.isFinite(ok.upstream.ms));
+ const shape=await (await handleRequest(req('/health?deep=1'),env,{},{fetch:async()=>Response.json({})})).json();
+ assert.equal(shape.status,'degraded');assert.equal(shape.upstream.code,'UPSTREAM_SHAPE');
+ const down=await (await handleRequest(req('/health?deep=1'),env,{},{fetch:async()=>new Response('',{status:500})})).json();
+ assert.equal(down.upstream.code,'UPSTREAM_STATUS');assert.equal(down.upstream.httpStatus,500);
+ const slow=await (await handleRequest(req('/health?deep=1'),env,{},{fetch:async()=>{throw new DOMException('x','TimeoutError')}})).json();
+ assert.equal(slow.upstream.code,'UPSTREAM_TIMEOUT');
 });

@@ -5,6 +5,8 @@ import { watchUpdates } from './updates.js';
 import { createTrainMap, expandableMap } from './map.js';
 import { api } from './provider.js';
 import { paintLED, led } from './led.js';
+import { RailboardError, BUILD, banner, createDiagnostics, runChecks, buildReport, describeCode } from './diagnostics.js';
+import { API_BASE_URL } from './config.js';
 import { read, write, clearBoard, validateSettings, matchingCache, recentStations } from './storage.js';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -14,6 +16,7 @@ let board = null;
 let request = 0;
 let loading = false;
 let staleBoard = true;
+const diag = createDiagnostics();
 const cacheKey = () => `board:${api.mock ? 'mock' : 'railinfo'}:${settings.crs}:${boardType}`;
 const scenario = new URLSearchParams(location.search).get('demo') || 'normal';
 const time = value => new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(value));
@@ -69,6 +72,13 @@ function renderBoard(stale = false) {
   $('board-messages').hidden = !board.messages?.length;
   if(settings.theme === 'retro') paintLED($('services'));
 }
+function showProblem(failure) {
+  const el = $('board-problem');
+  if (!failure || api.mock) { el.hidden = true; el.replaceChildren(); return; }
+  const info = banner(failure, board ? time(board.generatedAt) : null);
+  el.innerHTML = `<b>${escape(info.title)}</b>${escape(info.text)}${info.ref || diagnosticsUnlocked() ? `<div class="problem-row"><span class="problem-ref">${info.ref ? `Ref ${escape(info.ref)}` : ''}</span>${diagnosticsUnlocked() ? '<button type="button" id="problem-details">Details</button>' : ''}</div>` : ''}`;
+  el.hidden = false;
+}
 async function openBoard() {
   const cached = settings.cacheBoard ? read(cacheKey()) : null;
   if(matchingCache(cached,settings,boardType,api.mock)) { board=cached; renderBoard(true); }
@@ -91,8 +101,13 @@ async function refresh() {
     board = result;
     if (settings.cacheBoard) write(cacheKey(), board);
     renderBoard();
-  } catch {
+    if (!api.mock) diag.success();
+    showProblem(null);
+  } catch (caught) {
     if (current !== request) return;
+    const failure = caught instanceof RailboardError ? caught : new RailboardError(navigator.onLine ? 'UNKNOWN' : 'OFFLINE', caught?.message || 'Request failed', { detail: caught?.message || '' });
+    if (!api.mock && !['OFFLINE', 'COOLDOWN'].includes(failure.code)) diag.failure(failure);
+    showProblem(failure);
     const cached = settings.cacheBoard ? read(cacheKey()) : null;
     if (!board && matchingCache(cached, settings, boardType, api.mock)) board = cached;
     if (board) renderBoard(true);
@@ -227,6 +242,7 @@ $('recent-stations').addEventListener('click', event => {
 $('close-station-switcher').addEventListener('click', () => $('station-switcher').close());
 function openPreferences() {
   const first = !settings.onboarded;
+  renderDiagnostics();
   $('preferences-title').textContent = first ? 'Welcome to Railboard' : 'Settings';
   $('advanced-settings').hidden = first;
   $('close-preferences').hidden = first;
@@ -411,6 +427,52 @@ setInterval(() => { if (settings.autoRefresh && !document.hidden && !loading) re
 document.addEventListener('visibilitychange', () => { if (!document.hidden && settings.autoRefresh && (!board || Date.now() - Date.parse(board.generatedAt) >= 30000)) refresh(); });
 window.addEventListener('online', refresh);
 window.addEventListener('offline', () => { if (board) renderBoard(true); });
+
+// Diagnostics stay hidden until the Build number is tapped seven times.
+const diagnosticsUnlocked = () => read('diagnostics-unlocked') === true;
+let lastChecks = null, buildTaps = [];
+const dTime = iso => iso ? new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23', timeZone: 'Europe/London' }).format(new Date(iso)) : '—';
+async function shellVersion() {
+  try { return (await caches.keys()).find(k => k.startsWith('railboard-shell-'))?.replace('railboard-shell-', '') || 'none'; } catch { return 'unknown'; }
+}
+async function renderDiagnostics() {
+  const section = $('diagnostics');
+  section.hidden = !diagnosticsUnlocked();
+  if (section.hidden) return;
+  const links = lastChecks?.links || [{ id: 'app', label: 'Railboard app', state: 'ok', detail: `Build ${BUILD}`, ms: 0 }, { id: 'proxy', label: 'Railboard proxy', state: 'idle', detail: 'Not checked yet', ms: null }, { id: 'feed', label: 'railinfo feed', state: 'idle', detail: 'Not checked yet', ms: null }];
+  $('diag-chain').innerHTML = links.map(l => `<div class="diag-link-row" role="listitem"><span class="diag-dot ${l.state}" aria-hidden="true"></span><div><b>${escape(l.label)}</b><small>${escape(l.detail)}${l.code ? ` · ${escape(l.code)}` : ''}</small></div><span class="diag-ms">${l.state === 'ok' ? 'OK' : l.state === 'bad' ? 'FAILED' : '—'}${Number.isFinite(l.ms) && l.ms > 0 ? ` · ${l.ms} ms` : ''}</span></div>`).join('');
+  const v = lastChecks?.verdict;
+  $('diag-verdict').className = `diag-verdict ${v?.tone === 'ok' ? 'ok' : v?.tone === 'bad' ? 'bad' : ''}`;
+  $('diag-verdict').innerHTML = v ? `${escape(v.title)}<span>${escape(v.advice)}</span>` : 'Run a check to see how Railboard is connecting.';
+  const shell = await shellVersion();
+  const facts = [['Build', BUILD], ['Offline files', `${shell}${navigator.serviceWorker?.controller ? ' · active' : ' · not active'}`], ['Proxy version', lastChecks?.workerVersion || 'Not checked'], ['Last live board', dTime(diag.lastSuccess)], ['Last problem', dTime(diag.lastFailure)], ['Board on screen', !board ? 'None' : staleBoard || Date.now() - Date.parse(board.generatedAt) > 90000 ? `Saved · ${time(board.generatedAt)}` : 'Live']];
+  $('diag-facts').innerHTML = facts.map(([k, val]) => `<dt>${escape(k)}</dt><dd>${escape(val)}</dd>`).join('');
+  $('diag-log').innerHTML = diag.entries.length ? diag.entries.map(e => `<li><div class="row"><code>${escape(e.code)}</code><span class="ref">${escape(e.ref || '—')}</span></div><div class="row"><time datetime="${escape(e.at)}">${escape(dTime(e.at))}</time>${e.status ? `<span class="ref">HTTP ${e.status}</span>` : ''}</div>${e.detail ? `<div>${escape(e.detail)}</div>` : ''}</li>`).join('') : '<li>No problems recorded on this device.</li>';
+  $('diag-clear').hidden = !diag.entries.length;
+}
+async function diagnosticsReport() {
+  return buildReport({ checks: lastChecks, entries: diag.entries, lastSuccess: diag.lastSuccess, context: { theme: settings.theme, crs: settings.crs, board: boardType, online: navigator.onLine, shell: `${await shellVersion()}${navigator.serviceWorker?.controller ? ' (active)' : ''}`, boardState: !board ? 'none' : staleBoard ? `saved ${time(board.generatedAt)}` : 'live' } });
+}
+$('build-number').addEventListener('click', () => {
+  const now = Date.now();
+  buildTaps = [...buildTaps.filter(t => now - t < 3000), now];
+  if (buildTaps.length < 7 || diagnosticsUnlocked()) return;
+  buildTaps = []; write('diagnostics-unlocked', true);
+  renderDiagnostics(); $('diag-toast').textContent = 'Diagnostics unlocked'; $('diagnostics').scrollIntoView({ block: 'start' });
+});
+$('diag-hide').addEventListener('click', () => { write('diagnostics-unlocked', false); $('diag-report').hidden = true; $('diag-toast').textContent = ''; renderDiagnostics(); });
+$('diag-clear').addEventListener('click', () => { diag.clear(); renderDiagnostics(); });
+$('diag-run').addEventListener('click', async () => {
+  const button = $('diag-run'); button.disabled = true; button.textContent = 'Checking…'; $('diag-toast').textContent = '';
+  try { lastChecks = api.mock ? { links: [{ id: 'app', label: 'Railboard app', state: 'ok', detail: `Build ${BUILD}`, ms: 0 }, { id: 'proxy', label: 'Railboard proxy', state: 'idle', detail: 'Demo mode', ms: null }, { id: 'feed', label: 'railinfo feed', state: 'idle', detail: 'Demo mode', ms: null }], verdict: { tone: 'idle', title: 'Demo mode', advice: 'Live checks are off while demo services are shown.' }, workerVersion: null } : await runChecks({ base: API_BASE_URL, online: navigator.onLine }); $('diag-toast').textContent = `Checked ${dTime(new Date().toISOString())}`; }
+  finally { button.disabled = false; button.textContent = 'Run check'; await renderDiagnostics(); }
+});
+$('diag-copy').addEventListener('click', async () => {
+  const text = await diagnosticsReport(), pre = $('diag-report'); pre.textContent = text;
+  try { await navigator.clipboard.writeText(text); pre.hidden = true; $('diag-toast').textContent = 'Report copied'; }
+  catch { pre.hidden = false; const range = document.createRange(); range.selectNodeContents(pre); const selection = getSelection(); selection.removeAllRanges(); selection.addRange(range); $('diag-toast').textContent = 'Select and copy the report below'; }
+});
+$('board-problem').addEventListener('click', event => { if (event.target.id === 'problem-details') { openPreferences(); $('diagnostics').scrollIntoView({ block: 'start' }); } });
 applySettings();
 openBoard();
 if (!settings.onboarded) openPreferences();
