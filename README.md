@@ -21,6 +21,7 @@ Railboard 1.0 is a lightweight, mobile-first UK railway departure and arrival bo
 - Automatic refresh every 30 seconds while visible, with stale-data refresh when returning to the app.
 - Offline application shell and clearly labelled saved boards when live information is unavailable.
 - Preferences stored on your device; no Railboard account or analytics.
+- Hidden diagnostics: tap the Build number in Settings seven times to check the app, proxy and railinfo feed, review recent problems and copy a report. Failed refreshes show a reference such as `RB-7F3K`.
 
 ## Install on iPhone
 
@@ -63,6 +64,14 @@ The provider adapter normalises upstream fields before the UI consumes them. Boa
 
 The service worker caches the application shell. Board snapshots are managed separately by the application and labelled as cached when a live refresh has not succeeded. Requests are deduplicated, timed out and subject to a cooldown after rate limiting.
 
+## Diagnostics
+
+The Worker answers every failure with a specific `code`, a short `detail` and a `ref` (also sent as `X-Railboard-Request-Id` and written to the Worker log): `UPSTREAM_TIMEOUT`, `UPSTREAM_UNREACHABLE`, `UPSTREAM_STATUS`, `UPSTREAM_SHAPE`, `RATE_LIMITED` or `INVALID_QUERY`. The app adds `PROXY_TIMEOUT`, `PROXY_UNREACHABLE`, `PROXY_STATUS`, `PROXY_BAD_RESPONSE` and `APP_SHAPE`.
+
+`GET /health` is a cheap liveness check. `GET /health?deep=1` also probes the railinfo feed and reports its status and latency, so an uptime monitor can alert on `"status":"degraded"`.
+
+The last 20 failures are kept on the device only. Redeploy the Worker (`wrangler deploy` in `worker/`) for the new error codes and deep health check; an older Worker still works, with fewer details.
+
 ## Project structure
 
 | File | Purpose |
@@ -70,6 +79,7 @@ The service worker caches the application shell. Board snapshots are managed sep
 | `index.html`, `styles.css` | Shared interface, branding and theme presentation |
 | `src/app.js` | Board lifecycle, settings UI and service details |
 | `src/provider.js` | Live API adapter, validation and request handling |
+| `src/diagnostics.js` | Error codes, on-device problem log, health checks and report |
 | `src/api.js` | Demo fixtures and shared status wording |
 | `src/storage.js` | Local preferences and board-cache matching |
 | `src/led.js` | Dot-matrix glyphs and SVG renderer |

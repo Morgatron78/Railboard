@@ -577,3 +577,38 @@ body #journey.map-expanded{width:100%;max-width:none;height:100dvh;max-height:10
 #journey.map-expanded .train-location h3,#journey.map-expanded .train-location p{margin:0}
 #journey.map-expanded .train-map{flex:1;min-height:180px;height:auto}
 #journey .expand-map{align-self:flex-start}
+
+/* Diagnostics: hidden until the Build number is tapped seven times */
+#board-problem{margin:0 0 14px;padding:12px 14px;border-left:5px solid var(--bad);background:var(--surface);color:var(--text);font-size:14px;line-height:1.4}
+#board-problem b{display:block;font-size:15px}
+#board-problem .problem-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
+#board-problem .problem-ref{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+#board-problem button{min-height:44px;padding:0 4px;color:var(--accent);font-weight:700;text-decoration:underline}
+.build-number{display:inline;min-height:0;padding:4px 0;font:inherit;color:inherit}
+.diagnostics{border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text)}
+.diagnostics h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;color:var(--accent)}
+.diagnostics h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--accent)}
+.diag-chain{background:var(--surface);border:1px solid var(--line)}
+.diag-link-row{display:grid;grid-template-columns:22px 1fr auto;gap:10px;align-items:center;padding:10px 12px}
+.diag-link-row+.diag-link-row{border-top:1px solid var(--line)}
+.diag-dot{width:14px;height:14px;border-radius:50%;background:#7b8791;justify-self:center}
+.diag-dot.ok{background:#16833b}.diag-dot.bad{background:#c9232c}
+.diag-link-row b{display:block;font-size:14px}.diag-link-row small{color:var(--muted);font-size:12px;display:block}
+.diag-ms{font:600 12px ui-monospace,Menlo,Consolas,monospace;white-space:nowrap}
+.diag-verdict{margin:10px 0 0;padding:10px 12px;font-weight:700;color:#fff;background:#4b5863}
+.diag-verdict.ok{background:#16833b}.diag-verdict.bad{background:#c9232c}
+.diag-verdict span{display:block;font-weight:400;font-size:12.5px;margin-top:2px}
+.diag-facts{margin:14px 0;display:grid;grid-template-columns:auto 1fr;gap:6px 14px}
+.diag-facts dt{color:var(--muted)}.diag-facts dd{margin:0;text-align:right;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.diag-log-head{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.diag-log{list-style:none;margin:6px 0 0;padding:0;border:1px solid var(--line);background:var(--surface);font-size:12.5px}
+.diag-log li{padding:8px 10px}.diag-log li+li{border-top:1px solid var(--line)}
+.diag-log .row{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.diag-log code{font:700 12px ui-monospace,Menlo,Consolas,monospace;color:#c9232c;overflow-wrap:anywhere}
+.diag-log .ref,.diag-log time{font:11.5px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+.diag-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.diag-btn{border:2px solid var(--accent);color:var(--accent);font-weight:700;min-height:46px;background:transparent}
+.diag-btn.diag-fill{background:var(--accent);color:var(--bg)}
+.diag-link{min-height:44px;color:var(--accent);font-weight:600;text-decoration:underline;padding:0 4px}
+.diag-toast{min-height:18px;margin:8px 0 0;font-weight:700;color:#16833b}
+.diag-report{margin:8px 0;padding:10px;background:#101820;color:#d8e3ec;font:11.5px/1.5 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto;user-select:text}

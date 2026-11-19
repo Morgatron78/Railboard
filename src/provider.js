@@ -1,6 +1,7 @@
 import { mockProvider } from './api.js';
 import { API_BASE_URL } from './config.js';
 import { matchTrainPosition } from './tracking.js';
+import { RailboardError } from './diagnostics.js';
 const clean = v => typeof v === 'string' ? v : '';
 export function clockValue(value) {
   const s = clean(value).replace(':', '');
@@ -36,23 +37,38 @@ export function normalizeJourneys(raw, from, to) {
 export function createLiveProvider(base = API_BASE_URL, fetcher = fetch) {
   const pending = new Map(); let retryAt = 0;
   function get(path) {
-    if (Date.now() < retryAt) return Promise.reject(new Error('Please wait before refreshing'));
+    if (Date.now() < retryAt) return Promise.reject(new RailboardError('COOLDOWN', 'Please wait before refreshing'));
     if (pending.has(path)) return pending.get(path);
     const promise = (async () => {
-      const response = await fetcher(`${base}${path}`, { credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(12000) });
+      let response;
+      try { response = await fetcher(`${base}${path}`, { credentials: 'omit', cache: 'no-store', signal: AbortSignal.timeout(12000) }); }
+      catch (error) {
+        const timedOut = error?.name === 'TimeoutError';
+        throw new RailboardError(timedOut ? 'PROXY_TIMEOUT' : 'PROXY_UNREACHABLE', 'Railboard proxy did not respond', { detail: timedOut ? 'No reply within 12 s' : 'Could not connect' });
+      }
+      const headerRef = response.headers?.get?.('X-Railboard-Request-Id') || '';
       if (response.status === 429) {
-        const header = response.headers.get('Retry-After');
+        const header = response.headers?.get?.('Retry-After');
         const seconds = header && /^\d+$/.test(header) ? Number(header) : null;
         retryAt = Math.max(Date.now() + 30000, seconds !== null ? Date.now() + seconds * 1000 : Date.parse(header) || 0);
       }
-      if (!response.ok) throw new Error(`Board request failed (${response.status})`);
-      return response.json();
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        const known = typeof body?.code === 'string' && /^[A-Z_]{3,32}$/.test(body.code);
+        throw new RailboardError(known ? body.code : response.status === 429 ? 'RATE_LIMITED' : 'PROXY_STATUS', `Board request failed (${response.status})`,
+          { ref: typeof body?.ref === 'string' ? body.ref : headerRef, status: response.status, detail: typeof body?.detail === 'string' ? body.detail : '' });
+      }
+      try { return await response.json(); }
+      catch { throw new RailboardError('PROXY_BAD_RESPONSE', 'Unreadable response', { ref: headerRef, status: response.status, detail: 'The reply was not JSON' }); }
     })().finally(() => pending.delete(path));
     pending.set(path,promise); return promise;
   }
   async function board(type, { crs,count }) {
     if (!/^[A-Z]{3}$/.test(crs) || ![4,6,8,10,20,30].includes(count)) throw new Error('Invalid board options');
-    const result = normalizeBoard(await get(`/boards/${crs}/${type}?limit=${count}`),type,count);
+    const raw = await get(`/boards/${crs}/${type}?limit=${count}`);
+    let result;
+    try { result = normalizeBoard(raw,type,count); }
+    catch (error) { throw new RailboardError('APP_SHAPE', error.message, { detail: error.message }); }
     if (result.station.crs !== crs) throw new Error('Station mismatch');
     return result;
   }
