@@ -584,7 +584,7 @@ body #journey.map-expanded{width:100%;max-width:none;height:100dvh;max-height:10
 #board-problem .problem-row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:4px}
 #board-problem .problem-ref{font:600 12px ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
 #board-problem button{min-height:44px;padding:0 4px;color:var(--accent);font-weight:700;text-decoration:underline}
-.build-number{display:inline;min-height:0;padding:4px 0;font:inherit;color:inherit}
+.build-number{display:inline-block;min-height:0;padding:10px 8px;margin:-10px -8px;font:inherit;color:inherit;touch-action:manipulation;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .diagnostics{border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-size:13px;color:var(--text)}
 .diagnostics h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0 0 10px;color:var(--accent)}
 .diagnostics h4{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0;color:var(--accent)}
