@@ -1,5 +1,5 @@
 import { read, write } from './storage.js';
-export const BUILD = '45';
+export const BUILD = '46';
 export const LOG_LIMIT = 20;
 const KEY = 'diagnostics';
 export class RailboardError extends Error {
